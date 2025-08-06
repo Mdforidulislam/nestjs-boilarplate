@@ -22,7 +22,9 @@ export class AuthService {
 
   async login(data: {
     email: string;
-    password: string;
+    password?: string;
+    avatar?: string;
+    fullName?: string;
   }): Promise<{ access_token: string; refresh_token: string }> {
     const { email, password } = data;
 

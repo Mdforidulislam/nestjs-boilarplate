@@ -7,340 +7,200 @@ Table users {
   username String
   email String [unique, not null]
   description String
-  bankId String
   contactNo String [unique, not null]
   password String [not null]
   lang Lang [not null, default: 'ENG']
-  role Role [not null, default: 'CUSTOMER']
+  role Role [not null, default: 'TRADER']
   avatar String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  status status [not null, default: 'ACTIVE']
-  admin admins
-  brokerFirm broker_firms
-  broker brokers
-  chatsReceived chats [not null]
-  chatsSent chats [not null]
-  customer customers
-  notifications notifications [not null]
-  roomParticipants room_users [not null]
-  createdRooms rooms [not null]
-  roomsReceived rooms [not null]
-  roomsSent rooms [not null]
-  verifications verifications [not null]
+  admin Admin
+  trader traders
+  verifications user_verifications [not null]
+  sentMessages chats [not null]
+  receivedMessages chats [not null]
+  roomUsers rooms [not null]
+  roomUser room_users [not null]
+  messageRead MessageRead [not null]
+  notification notifications [not null]
 }
 
-Table verifications {
-  id String [pk]
-  email String [not null]
-  userId String [not null]
-  otp Int [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  user users [not null]
-}
-
-Table admins {
+Table user_verifications {
   id String [pk]
   userId String [unique, not null]
-  fullName String [not null]
-  location String
+  token String [unique]
+  otp String
+  isKYCVerifiedStripe Boolean [not null]
+  documentUrl String[] [not null]
+  verificationType VerificationStatus [not null, default: 'UNVERIFIED']
+  isVerified Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+  expiresAt DateTime [not null]
+  user users [not null]
+}
+
+Table Admin {
+  id String [pk]
+  userId String [unique, not null]
+  isActive Boolean [not null, default: true]
+  fastName String
+  lastName String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   user users [not null]
 }
 
-Table broker_firms {
+Table traders {
   id String [pk]
   userId String [unique, not null]
-  name String
-  registrationId String
-  location String
-  website String
-  address String
+  user users [not null]
+  isActive Boolean [not null, default: true]
+  stripeAccountId String
+  fastName String
+  lastName String
+  skills String[] [not null]
+  mininumHoulyRate Float
+  nationality String
+  tagline String[] [not null]
+  description String
+  attachments String[] [not null]
+  resumeFile String
+  socialMediaLink String[] [not null]
+  isVerified Boolean [not null, default: false]
+  isDeleted Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  advertises adverties [not null]
-  bookings bookings [not null]
-  brokerFirmBids broker_bids [not null]
-  selectedbrokerFirm broker_bids [not null]
-  brokerFirmSetting broker_firm_settings
-  user users [not null]
-  brokers brokers [not null]
-  favouriteTemplates favourite_templates [not null]
-  properties properties [not null]
+  reqestByTrader task_applications [not null]
+  offerByTrader task_applications [not null]
+  favoriteByTrader favourites [not null]
   tasks tasks [not null]
-  templates templates [not null]
+  Bosting_task bosting_tasks [not null]
+  reviews reviews [not null]
   payment payments [not null]
+  subscription subscriptions [not null]
 }
 
-Table brokers {
+Table categories {
   id String [pk]
-  userId String [unique, not null]
-  fullName String
-  location String
-  website String
-  address String
-  salary Float
-  comission Float
-  bonus Float
-  brokerFirmId String [not null]
+  name String [unique, not null]
+  file String[] [not null]
+  icon String
+  description String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  advertises adverties [not null]
-  bookings bookings [not null]
-  bidsSubmitted broker_bids [not null]
-  bidsWon broker_bids [not null]
-  brokerFirm broker_firms [not null]
-  user users [not null]
-  favouriteTemplates favourite_templates [not null]
-  properties properties [not null]
-  propertyDocuments property_documents [not null]
+  SubCategory sub_categories [not null]
   tasks tasks [not null]
-  templates templates [not null]
 }
 
-Table customers {
+Table sub_categories {
   id String [pk]
-  userId String [unique, not null]
-  fullName String
-  location String
-  address String
+  name String [not null]
+  categoryId String [not null]
+  file String[] [not null]
+  icon String
+  description String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  advertises adverties [not null]
-  bookings bookings [not null]
-  brokerBids broker_bids [not null]
-  user users [not null]
-  favouriteProperties favourite_properties [not null]
-  payments payments [not null]
-  properties properties [not null]
-  buyerDocuments property_documents [not null]
-  sellerDocuments property_documents [not null]
-}
-
-Table broker_firm_settings {
-  id String [pk]
-  basicSalary Float [not null]
-  stdCommision Float [not null]
-  brokerFirmId String [unique, not null]
-  brokerFirm broker_firms [not null]
+  category categories [not null]
+  tasks tasks [not null]
 }
 
 Table tasks {
   id String [pk]
-  name String [not null]
-  description String [not null]
-  date DateTime [not null]
-  assignedById String [not null]
-  assignedTo String [not null]
-  status TaskStatus [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  brokerFirm broker_firms [not null]
-  broker brokers [not null]
-}
-
-Table properties {
-  id String [pk]
-  name String [not null]
-  description String [not null]
-  lat String [not null]
-  long String [not null]
-  price Float [not null]
-  livingArea Float [not null]
-  constructionYear Int [not null]
-  type HousingType [not null]
-  numberOfRoom Int [not null]
-  facilities String[] [not null]
-  customerId String
-  brokerId String
-  brokerFirmId String
-  status PropertyStatus [not null, default: 'UPCOMING']
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  advertises adverties [not null]
-  bookings bookings [not null]
-  brokerBids broker_bids [not null]
-  favouriteProperties favourite_properties [not null]
-  files files [not null]
-  brokerFirm broker_firms
-  broker brokers
-  customer customers
-  propertyAnalytics property_analytics
-  propertyDocuments property_documents [not null]
-}
-
-Table property_analytics {
-  id String [pk]
-  views Int [not null]
-  interested Int [not null]
-  daysInMarket Int [not null]
-  propertyId String [unique, not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  property properties [not null]
-}
-
-Table files {
-  id String [pk]
-  propertyId String [not null]
-  url String [not null]
-  type FileType [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  property properties [not null]
-}
-
-Table favourite_properties {
-  id String [pk]
-  customerId String [not null]
-  propertyId String [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  customer customers [not null]
-  property properties [not null]
-}
-
-Table broker_bids {
-  id String [pk]
-  propertyId String [not null]
-  brokerId String [not null]
-  customerId String [not null]
-  price Float [not null]
-  name String
+  title String [not null]
+  taskType TaskType [not null, default: 'PAYMENT']
+  location String
+  max_salary Float
+  min_salary Float
+  require_skills String[] [not null]
+  attachments String[] [not null]
   description String
-  status BrokerBidStatus [not null]
-  selectedBrokerId String
-  selectedBrokerFirmId String
-  brokerFirmId String
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  brokerFirm broker_firms
-  broker brokers [not null]
-  customer customers [not null]
-  property properties [not null]
-  selectedBrokerFirm broker_firms
-  selectedBroker brokers
-}
-
-Table property_documents {
-  id String [pk]
-  name String
-  description String
-  url String [not null]
-  propertyId String [not null]
-  brokerId String
-  sellerId String
-  buyerId String
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  broker brokers
-  buyer customers
-  property properties [not null]
-  seller customers
-}
-
-Table adverties {
-  id String [pk]
-  propertyId String [not null]
-  brokerId String
-  brokerFirmId String
-  customerId String
-  Subscriptionid String
-  status AdvertiseStatus [not null, default: 'ACTIVE']
-  startDate DateTime [not null]
-  endDate DateTime [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  brokerFirm broker_firms
-  broker brokers
-  customer customers
-  property properties [not null]
-  suscription subscriptions
-}
-
-Table templates {
-  id String [pk]
-  name String [not null]
-  description String [not null]
-  url String [not null]
-  brokerFirmId String
-  brokerId String
-  type TemplateType [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  favouriteTemplates favourite_templates [not null]
-  borkerFirm broker_firms
-  broker brokers
-}
-
-Table favourite_templates {
-  id String [pk]
-  brokerFirmId String
-  brokerId String
-  templateId String [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  borkerFirm broker_firms
-  broker brokers
-  template templates [not null]
-}
-
-Table blogs {
-  id String [pk]
-  name String [not null]
-  description String [not null]
-  url String [not null]
+  deadline DateTime
   tags String[] [not null]
+  isActive Boolean [not null, default: true]
+  status TaskStatus [not null, default: 'PENDING']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  traderId String
+  trader traders
+  categoryid String [not null]
+  category categories [not null]
+  subCategoryid String
+  subCategory sub_categories
+  Favourites favourites [not null]
+  Bosting_tasks bosting_tasks [not null]
+  Task_Application task_applications [not null]
+  review reviews [not null]
 }
 
-Table bookings {
+Table task_applications {
   id String [pk]
-  customerId String [not null]
-  brokerFirmId String
-  brokerId String [not null]
-  propertyId String
-  duration String
-  meetingType meetType [not null, default: 'VIEWING']
-  name String [not null]
-  contactNo String [not null]
-  email String [not null]
-  location String [not null]
-  date DateTime [not null]
-  notes String [not null]
+  status AplicationStatus [not null, default: 'IN_PROGRESS']
   createdAt DateTime [default: `now()`, not null]
-  updateAt DateTime [not null]
-  brokerFirm broker_firms
-  broker brokers [not null]
-  customer customers [not null]
-  property properties
+  updatedAt DateTime [not null]
+  requestId String [not null]
+  reqestByTrader traders [not null]
+  offerId String [not null]
+  offerByTrader traders [not null]
+  taskId String [not null]
+  task tasks [not null]
+}
+
+Table favourites {
+  id String [pk]
+  userId String [not null]
+  type FavouriteType [not null, default: 'TASK']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  favoriteByTraderId String
+  favouriteByTrader traders
+  taskId String
+  task tasks
+}
+
+Table reviews {
+  id String [pk]
+  taskId String [not null]
+  traderid String [not null]
+  rating Int [not null]
+  comment String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  task tasks [not null]
+  trader traders [not null]
+}
+
+Table bosting_tasks {
+  id String [pk]
+  taskId String [not null]
+  traderId String [not null]
+  status TaskStatus [not null, default: 'PENDING']
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  task tasks [not null]
+  trader traders [not null]
+  payment payments [not null]
 }
 
 Table subscriptions {
   id String [pk]
   subscriptionPlanId String [not null]
-  ownerId String
+  subscriptionPlan subscription_plans [not null]
+  ownerId String [not null]
+  trader traders [not null]
   subscriptionStatus SubscriptionStatus [not null, default: 'ACTIVE']
   stripeSubscriptionId String
   stripeCustomerId String
   expiresAt DateTime [not null]
   createdAt DateTime [default: `now()`, not null]
   cancelRequest Boolean [not null, default: false]
-  subscriptionPlan subscription_plans [not null]
   payments payments [not null]
-  advertises adverties [not null]
 }
 
 Table subscription_plans {
   id String [pk]
-  plan SubscribePlan [not null, default: 'MONTH']
-  status SubscriptionPlanStatus [not null, default: 'ACTIVE']
-  planName PlanName [not null]
+  plan SubscribePlan [not null, default: 'PRO_PLAN']
   name String [not null]
-  planType PlanType [not null]
   description String [not null]
   featuresList String[] [not null]
   trialPeriod Boolean [not null, default: false]
@@ -360,110 +220,126 @@ Table payments {
   paymentDate DateTime [not null]
   paymentStatus PaymentStatus [not null]
   subscriptionId String
+  traderId String
   subscriptionPlanId String
+  bostingId String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  customer customers
-  brokerFirm broker_firms
   subscription subscriptions
+  trader traders
+  bosting bosting_tasks
 }
 
 Table notifications {
   id String [pk]
   userId String [not null]
+  user users [not null]
   title String [not null]
   body String [not null]
   data String
   read Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  user users [not null]
+}
+
+Table rooms {
+  id String [pk]
+  roomName String
+  description String
+  img String
+  type RoomType [not null, default: 'GROUP']
+  isPrivate Boolean [not null, default: false]
+  createdByUserId String [not null]
+  createdBy users [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  participants room_users [not null]
+  chats chats [not null]
 }
 
 Table room_users {
   id String [pk]
   roomId String [not null]
   userId String [not null]
-  createdAt DateTime [default: `now()`, not null]
+  joinedAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   room rooms [not null]
   user users [not null]
 
   indexes {
-    (userId, roomId) [unique]
+    (roomId, userId) [unique]
   }
-}
-
-Table rooms {
-  id String [pk]
-  type RoomType [not null, default: 'GROUP']
-  name String
-  description String
-  img String
-  senderId String
-  receiverId String
-  creatorId String [not null]
-  createdAt DateTime [default: `now()`, not null]
-  updatedAt DateTime [not null]
-  userId String
-  chat chats [not null]
-  participants room_users [not null]
-  creator users [not null]
-  receiver users
-  sender users
 }
 
 Table chats {
   id String [pk]
   senderId String [not null]
-  receiverId String
+  receiverId String [not null]
   roomId String [not null]
   message String [not null]
   images String[] [not null]
   isRead Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  sender users [not null]
   receiver users
   room rooms [not null]
-  sender users [not null]
+  messageRead MessageRead [not null]
 }
 
-Table ReceiverRelation {
-  chatsreceivedId String [ref: > chats.id]
-  roomsreceivedId String [ref: > rooms.id]
+Table MessageRead {
+  id String [pk]
+  messageId String [not null]
+  userId String [not null]
+  readAt DateTime [not null]
+  message chats [not null]
+  user users [not null]
 }
 
-Table SenderRelation {
-  chatssentId String [ref: > chats.id]
-  roomssentId String [ref: > rooms.id]
+Enum VerificationStatus {
+  PENDING
+  VERIFIED
+  UNVERIFIED
 }
 
-Enum meetType {
-  VIEWING
-  ONLINE
-  CONTACT_SINGLE_OFFICE
+Enum TaskType {
+  CASH
+  PAYMENT
 }
 
-Enum PlanType {
-  SUBSRIPTION_CUSTOMER
-  SUBSCRIPTION_BROKER_FIRM
+Enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  ON_HOLD
+  ORDER_ACTIVE
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+Enum AplicationStatus {
+  IN_PROGRESS
+  REJECTED
+  CANCELED
+  APPROVED
+}
+
+Enum FavouriteType {
+  TASK
+  TRADER
+}
+
+Enum RoomType {
+  SINGLE
+  GROUP
+  PRIVATE
+  BROADCAST
 }
 
 Enum Role {
   SUPER_ADMIN
   ADMIN
-  BROKER_FIRM
-  BROKER
-  CUSTOMER
-}
-
-Enum status {
-  ACTIVE
-  INACTIVE
-  BLOCKED
-  AVAILABLE
-  UNAVAILABLE
-  ON_RIDE
+  TRADER
 }
 
 Enum Lang {
@@ -471,83 +347,23 @@ Enum Lang {
   ARB
 }
 
-Enum RoomType {
-  PRIVATE
-  GROUP
-}
-
-Enum HousingType {
-  APARTMENT
-  STUDIO
-  PENTHOUSE
-  DUPLEX
-  TRIPLEX
-  CONDOMINIUM
-  VILLA
-  HOUSE
-  COTTAGE
-  HOLIDAY_HOME
-  TOWNHOUSE
-  SEMI_DETACHED_HOUSE
-  CHAIN_HOUSE
-  FARM_HOUSE
-  FOREST_PROPERTY
-  BUNGALOW
-  MOBILE_HOME
-  TINY_HOUSE
-  LOFT
-  PLOT_LAND
-  COMMERCIAL_PROPERTY
-  NEW_PRODUCTION
-}
-
-Enum FileType {
-  IMAGE
-  VIDEO
-}
-
-Enum PropertyStatus {
-  FOR_SALE
-  SOLD
-  UPCOMING
-}
-
-Enum TemplateType {
-  RENTAL
-  BUY
-  SELL
-  AGGREMENT
-  CERTIFICATE
-}
-
-Enum BrokerBidStatus {
-  SUBMITTED
-  REJECTED
-  APRROVED
-}
-
-Enum SubscriptionPlanStatus {
-  ACTIVE
-  INACTIVE
-}
-
 Enum SubscriptionStatus {
   PENDING
   ACTIVE
+  INACTIVE
   EXPIRED
   CANCELLED
   PAST_DUE
 }
 
+Enum SubscribePlan {
+  PRO_PLAN
+  ELITE_PLAN
+}
+
 Enum PaymentMethod {
   STRIPE
   PAYPAL
-}
-
-Enum SubscribePlan {
-  MONTH
-  THREE_MONTH
-  ONE_TIME
 }
 
 Enum PaymentStatus {
@@ -563,135 +379,62 @@ Enum PaymentStatus {
   FAILED
 }
 
-Enum Currency {
-  USD
-  EUR
-  GBP
-  AUD
-  CAD
-  JPY
-}
+Ref: user_verifications.userId > users.id
 
-Enum PlanName {
-  BASE
-  PLUS
-  PREMIUM
-  MAX
-}
+Ref: Admin.userId - users.id
 
-Enum AdvertiseStatus {
-  ACTIVE
-  INACTIVE
-  WAITING
-}
+Ref: traders.userId - users.id
 
-Enum TaskStatus {
-  ASSIGNED
-  COMPLETED
-}
+Ref: sub_categories.categoryId > categories.id
 
-Ref: verifications.userId > users.id
+Ref: tasks.traderId > traders.id
 
-Ref: admins.userId - users.id
+Ref: tasks.categoryid > categories.id
 
-Ref: broker_firms.userId - users.id
+Ref: tasks.subCategoryid > sub_categories.id
 
-Ref: brokers.brokerFirmId > broker_firms.id
+Ref: task_applications.requestId > traders.id
 
-Ref: brokers.userId - users.id
+Ref: task_applications.offerId > traders.id
 
-Ref: customers.userId - users.id
+Ref: task_applications.taskId > tasks.id
 
-Ref: broker_firm_settings.brokerFirmId - broker_firms.id
+Ref: favourites.favoriteByTraderId > traders.id
 
-Ref: tasks.assignedById > broker_firms.id
+Ref: favourites.taskId > tasks.id
 
-Ref: tasks.assignedTo > brokers.id
+Ref: reviews.taskId > tasks.id
 
-Ref: properties.brokerFirmId > broker_firms.id
+Ref: reviews.traderid > traders.id
 
-Ref: properties.brokerId > brokers.id
+Ref: bosting_tasks.taskId > tasks.id
 
-Ref: properties.customerId > customers.id
-
-Ref: property_analytics.propertyId - properties.id
-
-Ref: files.propertyId > properties.id
-
-Ref: favourite_properties.customerId > customers.id
-
-Ref: favourite_properties.propertyId > properties.id
-
-Ref: broker_bids.brokerFirmId > broker_firms.id
-
-Ref: broker_bids.brokerId > brokers.id
-
-Ref: broker_bids.customerId > customers.id
-
-Ref: broker_bids.propertyId > properties.id
-
-Ref: broker_bids.selectedBrokerFirmId > broker_firms.id
-
-Ref: broker_bids.selectedBrokerId > brokers.id
-
-Ref: property_documents.brokerId > brokers.id
-
-Ref: property_documents.buyerId > customers.id
-
-Ref: property_documents.propertyId > properties.id
-
-Ref: property_documents.sellerId > customers.id
-
-Ref: adverties.brokerFirmId > broker_firms.id
-
-Ref: adverties.brokerId > brokers.id
-
-Ref: adverties.customerId > customers.id
-
-Ref: adverties.propertyId > properties.id
-
-Ref: adverties.Subscriptionid > subscriptions.id
-
-Ref: templates.brokerFirmId > broker_firms.id
-
-Ref: templates.brokerId > brokers.id
-
-Ref: favourite_templates.brokerFirmId > broker_firms.id
-
-Ref: favourite_templates.brokerId > brokers.id
-
-Ref: favourite_templates.templateId > templates.id
-
-Ref: bookings.brokerFirmId > broker_firms.id
-
-Ref: bookings.brokerId > brokers.id
-
-Ref: bookings.customerId > customers.id
-
-Ref: bookings.propertyId > properties.id
+Ref: bosting_tasks.traderId > traders.id
 
 Ref: subscriptions.subscriptionPlanId > subscription_plans.id
 
-Ref: payments.customerId > customers.id
-
-Ref: payments.brokerFirmId > broker_firms.id
+Ref: subscriptions.ownerId > traders.id
 
 Ref: payments.subscriptionId > subscriptions.id
 
+Ref: payments.traderId > traders.id
+
+Ref: payments.bostingId > bosting_tasks.id
+
 Ref: notifications.userId > users.id
+
+Ref: rooms.createdByUserId > users.id
 
 Ref: room_users.roomId > rooms.id
 
 Ref: room_users.userId > users.id
 
-Ref: rooms.creatorId > users.id
-
-Ref: rooms.receiverId > users.id
-
-Ref: rooms.senderId > users.id
+Ref: chats.senderId > users.id
 
 Ref: chats.receiverId > users.id
 
 Ref: chats.roomId > rooms.id
 
-Ref: chats.senderId > users.id
+Ref: MessageRead.messageId > chats.id
+
+Ref: MessageRead.userId > users.id

@@ -1,0 +1,83 @@
+Authentication : 
+         ( Optional)   FireBase Authentication :  
+                                Google :  
+                                Facebook: 
+                                GitHub: 
+                                Password && Email:  
+         (Required)   LocalLogin: 
+                                My System: 
+                                   RegisterTime Feild get : 
+                                                    name 
+                                                    Email
+                                                    Password
+
+Verification Processing: ( ) 
+            user Should Verficiation : 
+
+                    user fast create Register after  =>  the create account in stripe  => generateOnboardingLink > getRedirectLink  to frontned url for => customer provide there info ( bank , nationalId Card nessceryInfo) KYC info
+                    
+
+
+Subscription : ()
+            RecursiveSubscripiton:
+
+                    Two Type of Plan 
+                        Pro Plan : 
+                                3 tread Listing
+                                TradeWith up to 3 People 
+                        ElitePlan:
+                                Unlimited Listing 
+                                Verified Badge In profile
+
+                                ProfileAddOption: 
+                                            Resume
+                                            portfolio
+                                            social Links
+
+                                Free Monthly Sponsored Trade Boosts
+
+                                            Tread Boots
+                                            Recommend Users
+                                            Need Skills Match User Show On Searcing Trade with Tags
+
+
+            Boots
+                    2Type of Boots:
+
+
+
+Task Handle : 
+
+            TaskCreate:         
+                    All Feild Task TaskCreate
+            
+            TaskRequest && offers:
+                    Difrent Model 
+                            Requestid + taskid
+                            Offerid     + taskid0
+                            status: Inprogress, active, complate , fail
+                            isSumit: false / true
+                            files:
+
+            Task OffersAccept: 
+                    if Status: is Inprogress  tails offers Accept korte parbe na , take payment korte hobe , tar por task status change hobe ( active)
+                                status cahnge hobe two option 
+                                            manully 
+                                            automaticaly
+            taskSubmit:  
+                      if user taskSubmit kore taile  task status jodi complate hy taile payment system a jabe 
+
+            Taka Return akta sujuk rakte hobe !! jodi task not accept hy taile retrun akta sujug rakte hobe , 
+
+
+
+Verification akta system rakte hobe : 
+ 
+
+Chat System : 
+            Room
+            Single
+
+
+
+
