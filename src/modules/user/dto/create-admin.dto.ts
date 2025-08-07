@@ -1,4 +1,4 @@
-import { Lang, Role, status } from '@prisma/client';
+import { Lang, Role } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsEmail,
@@ -12,8 +12,14 @@ import {
 } from 'class-validator';
 
 class CreateAdminDto {
+  
+  @IsOptional()
   @IsString()
   fullName: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
 
   @IsOptional()
   @IsString()
@@ -53,10 +59,6 @@ export class CreateUserAdminDto {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsEnum(status)
-  @IsOptional()
-  status?: status = status.ACTIVE;
 
   @IsOptional()
   @ValidateNested()

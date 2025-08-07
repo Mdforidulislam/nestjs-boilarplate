@@ -71,5 +71,5 @@ export class CreateCustomerDto {
   contactNo: string;
 
   @IsEnum(Role)
-  role: Role = Role.CUSTOMER;
+  role: Role = Role.TRADER;
 }

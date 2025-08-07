@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/helper/prisma.service';
-import { sub } from 'date-fns';
 
 @Injectable()
 export class WebhookService {
@@ -119,12 +118,38 @@ export class WebhookService {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('⚠️ Trial Will End Soon for:', subscription.trial_end);
 
-        
-
-
+    
         break;
       }
 
+      case "account.updated" :{
+        const account = event.data.object as Stripe.Account;
+        
+        // 🔍 Handle event
+        if (event.type === 'account.updated') {
+          const account = event.data.object;
+
+          if (
+            account.details_submitted &&
+            account.requirements.currently_due.length === 0 &&
+            account.requirements.eventually_due.length === 0 &&
+            account.requirements.past_due.length === 0
+          ) {
+            console.log(`Stripe account ${account.id} is verified!`);
+
+              this.prisma.user.update({
+                where:{
+                  stripeAccountId: account.id
+                } as any,
+                data:{
+                  isVerified: true
+                }
+              })
+          }
+        }
+        console.log('Account Updated:', account);
+        break;
+      }
       default:
         console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }

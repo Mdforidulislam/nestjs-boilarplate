@@ -75,3 +75,5 @@ Nest is [MIT licensed](LICENSE).
 
 
 ### Digitalboab
+
+## npx @nestjs/cli g resource request-quotation

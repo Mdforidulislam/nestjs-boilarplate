@@ -1,27 +1,23 @@
-// src/modules/stripe/stripe.service.ts
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+// src/payment/Stripe/stripe.connection.ts
 import Stripe from 'stripe';
+import { ConfigService } from '@nestjs/config';
 
-@Injectable()
-export class StripeService implements OnModuleInit {
-  private stripe: Stripe;
+// Reusable Stripe Singleton
+export class StripeSingleton {
+  private static instance: Stripe;
 
-  constructor(private readonly configService: ConfigService) {}
-
-  onModuleInit() {
-    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY not found in env');
+  static initialize(configService: ConfigService): void {
+    if (!StripeSingleton.instance) {
+      const secretKey = configService.get<string>('STRIPE_SECRET_KEY');
+      if (!secretKey) throw new Error('Stripe Secret Key not found');
+      StripeSingleton.instance = new Stripe(secretKey, {});
     }
-
-    this.stripe = new Stripe(stripeSecretKey, {
-    //   apiVersion: '2024-04-10',
-    });
   }
 
-  get stripeClient(): Stripe {
-    if (!this.stripe) throw new Error('Stripe client not initialized');
-    return this.stripe;
+  static getClient(): Stripe {
+    if (!StripeSingleton.instance) {
+      throw new Error('Stripe client not initialized. Call initialize() first.');
+    }
+    return StripeSingleton.instance;
   }
 }

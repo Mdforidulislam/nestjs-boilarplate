@@ -4,7 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, Role, User } from '@prisma/client';
 import { ApiError } from 'src/utils/api_error';
 import { BcryptService } from 'src/utils/bcrypt.service';
-import { CreateCustomerDto } from './dto/create-customer.dto';
 import QueryBuilderIsrafil from '@/utils/queryBuilderIsrafil';
 
 import {
@@ -27,30 +26,6 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async user(
-    userWhereUniqueInput: Prisma.UserWhereUniqueInput,
-  ): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: userWhereUniqueInput,
-    });
-  }
-
-  async users(params: {
-    skip?: number;
-    take?: number;
-    cursor?: Prisma.UserWhereUniqueInput;
-    where?: Prisma.UserWhereInput;
-    orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<User[]> {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-    });
-  }
 
   async createAdmin(data: CreateUserAdminDto): Promise<User | null> {
     const { admin: adminData, ...userData } = data;
@@ -121,217 +96,9 @@ export class UserService {
     });
   }
 
-  async createBrokerFirm(data: any): Promise<User | null> {
-    const { brokerFirm: brokerFirmData, ...userData } = data;
-
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        userData.role = Role.BROKER_FIRM;
-
-        if (!userData.password) {
-          userData.password = this.configService.get<string>(
-            'DEFAULT_BROKER_FIRM_PASSWORD',
-          );
-        }
-
-        userData.password = await this.bcryptService.hash(userData.password);
-
-        const isEmailExists = await tx.user.findUnique({
-          where: { email: userData?.email },
-        });
-
-        if (isEmailExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `user email is already exists`,
-          );
-        }
-
-        const isContactNoExists = await tx.user.findUnique({
-          where: { contactNo: userData?.contactNo },
-        });
-
-        if (isContactNoExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `contact no is already exists`,
-          );
-        }
-
-        const userCreation = await tx.user.create({
-          data: { ...userData },
-        });
-
-        const brokerFirmCreation = await tx.brokerFirm.create({
-          data: {
-            ...brokerFirmData,
-            userId: userCreation?.id,
-          } as any,
-        });
-
-        if (!userCreation || !brokerFirmCreation) {
-          throw new ApiError(
-            HttpStatus.NOT_FOUND,
-            'Failed to create broker firm and user',
-          );
-        }
-
-        return userCreation;
-      },
-      {
-        maxWait: 5000,
-        timeout: 10000,
-      },
-    );
-
-    return await this.prisma.user.findUnique({
-      where: { id: result?.id },
-      include: { brokerFirm: true },
-    });
-  }
-
-  async createBroker(data: any): Promise<User | null> {
-    const { broker: brokerData, ...userData } = data;
-
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        userData.role = Role.BROKER;
-
-        if (!userData.password) {
-          userData.password = this.configService.get<string>(
-            'DEFAULT_BROKER_PASSWORD',
-          );
-        }
-
-        userData.password = await this.bcryptService.hash(userData.password);
-
-        const isEmailExists = await tx.user.findUnique({
-          where: { email: userData?.email },
-        });
-
-        if (isEmailExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `user email is already exists`,
-          );
-        }
-
-        const isContactNoExists = await tx.user.findUnique({
-          where: { contactNo: userData?.contactNo },
-        });
-
-        if (isContactNoExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `contact no is already exists`,
-          );
-        }
-
-        const userCreation = await tx.user.create({
-          data: { ...userData },
-        });
-
-        const brokerCreation = await tx.broker.create({
-          data: {
-            ...brokerData,
-            userId: userCreation?.id,
-          } as any,
-        });
-
-        if (!userCreation || !brokerCreation) {
-          throw new ApiError(
-            HttpStatus.NOT_FOUND,
-            'Failed to create broker firm and user',
-          );
-        }
-
-        return userCreation;
-      },
-      {
-        maxWait: 5000,
-        timeout: 10000,
-      },
-    );
-
-    return await this.prisma.user.findUnique({
-      where: { id: result?.id },
-      include: { broker: true },
-    });
-  }
-
-  async createCustomer(data: CreateCustomerDto): Promise<User | null> {
-    const { customer: customerData, ...userData } = data;
-
-    const result = await this.prisma.$transaction(
-      async (tx) => {
-        userData.role = Role.CUSTOMER;
-
-        if (!userData.password) {
-          userData.password = this.configService.get<string>(
-            'DEFAULT_CUSTOMER_PASSWORD',
-          );
-        }
-
-        userData.password = await this.bcryptService.hash(userData.password);
-
-        const isEmailExists = await tx.user.findUnique({
-          where: { email: userData?.email },
-        });
-
-        if (isEmailExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `user email is already exists`,
-          );
-        }
-
-        const isContactNoExists = await tx.user.findUnique({
-          where: { contactNo: userData?.contactNo },
-        });
-
-        if (isContactNoExists) {
-          throw new ApiError(
-            HttpStatus.CONFLICT,
-            `contact no is already exists`,
-          );
-        }
-
-        const userCreation = await tx.user.create({
-          data: { ...userData, role: Role.CUSTOMER },
-        });
-
-        const customerCreation = await tx.customer.create({
-          data: {
-            // ...customerData,
-            userId: userCreation?.id,
-            ...customerData,
-          },
-        });
-
-        if (!userCreation || !customerCreation) {
-          throw new ApiError(
-            HttpStatus.NOT_FOUND,
-            'Failed to create customer and user',
-          );
-        }
-
-        return userCreation;
-      },
-      {
-        maxWait: 5000,
-        timeout: 10000,
-      },
-    );
-
-    return await this.prisma.user.findUnique({
-      where: { id: result?.id },
-      include: { customer: true },
-    });
-  }
-
   async createUser(data: Prisma.UserCreateInput): Promise<User> {
     return this.prisma.user.create({
-      data,
+      data
     });
   }
 
@@ -361,7 +128,7 @@ export class UserService {
       },
       include: {
         admin: true,
-        customer: true,
+        trader: true,
       },
     });
 

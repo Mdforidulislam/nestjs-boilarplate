@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@/app/app.module';
 import * as fs from 'fs';
 import * as express from 'express';
+import { StripeSingleton } from './payment/Stripe/stripe.connection';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -56,11 +57,11 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>('port') || 5000;
-  
+  StripeSingleton.initialize(configService);
 
   const config = new DocumentBuilder()
-    .setTitle('Bajram')
-    .setDescription('The Bajram API description')
+    .setTitle('kmathew95_Server')
+    .setDescription('The kmathew95_Server API description')
     .setVersion('1.0')
     .build();
 

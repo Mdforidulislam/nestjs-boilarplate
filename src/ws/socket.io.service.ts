@@ -20,6 +20,7 @@ import { Server, Socket } from 'socket.io';
   },
   perMessageDeflate: false,
 })
+
 export class WebsocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -184,7 +185,7 @@ export class WebsocketGateway
         message,
 
         images: { set: images || [] },
-      },
+      } as any
     });
 
     const participants = await this.prisma.roomUser.findMany({
@@ -244,7 +245,7 @@ export class WebsocketGateway
         where: { userId },
         include: {
           room: {
-            include: { chat: { orderBy: { createdAt: 'desc' }, take: 1 } },
+            include: { chat: { orderBy: { createdAt: 'desc' }, take: 1 } } as any
           },
         },
       });
@@ -260,8 +261,8 @@ export class WebsocketGateway
         .sort((a, b) => {
           if (!a.lastMessage || !b.lastMessage) return 0;
           return (
-            new Date(b.lastMessage.createdAt).getTime() -
-            new Date(a.lastMessage.createdAt).getTime()
+            new Date(b as any).getTime() -
+            new Date(a as any).getTime()
           );
         });
 

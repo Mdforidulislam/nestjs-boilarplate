@@ -36,6 +36,7 @@ import { AuthService } from './auth.service';
     // { provide: APP_GUARD, useClass: RolesGuard },
   ],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService,UserService],
+  
 })
 export class AuthModule {}

@@ -3,7 +3,7 @@ import { IGenericResponse } from '@/interface/common';
 import { ApiError } from '@/utils/api_error';
 import QueryBuilder from '@/utils/query_builder';
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { Customer, Role } from '@prisma/client';
+import { Trader, Role } from '@prisma/client';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
 // import { UpdateCustomerDto } from './dto/update-Customer.dto';
 
@@ -13,7 +13,7 @@ export class CustomerService {
 
   async findAll(
     query: Record<string, any>,
-  ): Promise<IGenericResponse<Customer[]>> {
+  ): Promise<IGenericResponse<Trader[]>> {
     const populateFields = query.populate
       ? query.populate
           .split(',')
@@ -34,7 +34,7 @@ export class CustomerService {
       .include({
         customer: true,
       })
-      .rawFilter({ role: Role.CUSTOMER })
+      .rawFilter({ role: Role.TRADER })
       .populate(populateFields)
       .execute();
 
@@ -44,14 +44,14 @@ export class CustomerService {
   }
 
   async findOne(id: string) {
-    let isCustomerExists = await this.prisma.customer
+    let isCustomerExists = await this.prisma.trader
       .findUnique({
         where: { id },
       })
       .catch(() => null);
 
     if (!isCustomerExists) {
-      isCustomerExists = await this.prisma.customer.findUnique({
+      isCustomerExists = await this.prisma.trader.findUnique({
         where: { userId: id },
       });
     }
@@ -62,7 +62,7 @@ export class CustomerService {
 
     return await this.prisma.user.findUnique({
       where: { id: isCustomerExists?.userId },
-      include: { customer: true },
+      include: { trader: true },
     });
   }
 
@@ -99,8 +99,8 @@ export class CustomerService {
           }
         }
 
-        const CustomerUpdation = await this.prisma.customer.update({
-          where: { id: isUserExists?.customer?.id },
+        const CustomerUpdation = await this.prisma.trader.update({
+          where: { id: isUserExists?.trader?.id },
           data: { ...(customer as any) },
         });
 
@@ -128,7 +128,7 @@ export class CustomerService {
 
     return await this.prisma.user.findUnique({
       where: { id: result?.id },
-      include: { customer: true },
+      include: { trader: true },
     });
   }
 
@@ -141,8 +141,8 @@ export class CustomerService {
 
     await this.prisma.$transaction(
       async (tx) => {
-        const CustomerDeletion = await tx.customer.delete({
-          where: { id: isUserExists?.customer.id },
+        const CustomerDeletion = await tx.trader.delete({
+          where: { id: isUserExists?.trader.id },
         });
 
         const userDeletion = await tx.user.delete({

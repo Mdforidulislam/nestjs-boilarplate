@@ -5,6 +5,7 @@ import { UserService } from '@/modules/user/user.service';
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import e from 'express';
 import { ApiError } from 'src/utils/api_error';
 import { BcryptService } from 'src/utils/bcrypt.service';
@@ -19,6 +20,39 @@ export class AuthService {
     private brevoService: BrevoService,
     private prisma: PrismaService,
   ) { }
+
+  // All User Resiger Here 
+
+  async RegisterUser(data: any) {
+       const repsonse = await this.prisma.$transaction(async (tx) => {
+              const {trader, ...user} = data;
+             
+            const isUserExists = await this.usersService.getOne({ email: user.email });
+
+            if (isUserExists) {
+              throw new ApiError(HttpStatus.CONFLICT, 'User already exists');
+            }
+
+            user.password = await this.bcryptService.hash(user.password);
+          
+            const userData = await this.usersService.createUser(user);
+
+           await this.prisma.trader.create({
+              data: {
+                userId: userData.id,
+                ...trader
+              }
+            });
+
+            return await this.prisma.user.findUnique({
+              where: { id: userData.id },
+              include: { trader: true }
+            });
+       })
+
+       return repsonse
+  }
+
 
   async login(data: {
     email: string;
@@ -68,23 +102,27 @@ export class AuthService {
     };
   }
 
-  async getMe(user: any) {
+  async getMe(user: User) {
+  const include = user?.role === 'ADMIN'
+    ? { admin: true }
+    : { trader: true };
 
-    const isUserExists = await this.prisma.user.findUnique({
-      where: { 
-        email: user?.email
-       } as any,
-      include: { admin: true }
-    });
+  const isUserExists = await this.prisma.user.findUnique({
+    where: {
+      email: user?.email,
+    },
+    include: include
+  });
 
-    console.log(isUserExists, 'isUserExists in getMe method');
+  console.log(isUserExists, 'isUserExists in getMe method');
 
-    if (!isUserExists) {
-      throw new ApiError(HttpStatus.NOT_FOUND, `user not found`);
-    }     
-
-    return isUserExists;
+  if (!isUserExists) {
+    throw new ApiError(HttpStatus.NOT_FOUND, `User not found`);
   }
+
+  return isUserExists;
+}
+
 
   async changePassword({
     id,

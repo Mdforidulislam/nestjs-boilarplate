@@ -15,12 +15,31 @@ import { Public } from './auth.decorator';
 import { Request } from 'express';
 import { ResponseService } from '@/utils/response';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserService } from '../user/user.service';
+import { Roles } from './roles.decorator';
+import { Role } from '@prisma/client';
 
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+  ) { }
+
+
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  @Post('register')
+  @ApiOperation({ summary: 'User Register' })
+  async register(@Body() registerDto: any) {
+    const result = await this.authService.RegisterUser(registerDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'User Register successfully',
+      data: result,
+    });
+  }
 
   @HttpCode(HttpStatus.OK)
   @Public()
@@ -38,6 +57,7 @@ export class AuthController {
     });
   }
 
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Get('get-me')
   async getProfile(@Req() req: Request) {
     const user: any = req?.user;
@@ -49,6 +69,7 @@ export class AuthController {
     });
   }
 
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Post('change-password')
   async changePassword(
     @Body() data: { prevPass: string; newPass: string },
@@ -65,6 +86,7 @@ export class AuthController {
     });
   }
 
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Post('forgot-password')
   async forgotPasswod(@Body() data: { email: string }) {
     const result = await this.authService.forgetPassword({
@@ -77,6 +99,7 @@ export class AuthController {
     });
   }
 
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Post('reset-password')
   async resetPassword(
     @Headers('authorization') token: string,

@@ -8,31 +8,29 @@ import {
   Post,
   Req
 } from '@nestjs/common';
-import { CreateCustomerDto } from './dto/create-customer.dto';
 import { UserService } from './user.service';
 import { Request } from 'express';
 import { CreateUserAdminDto } from './dto/create-admin.dto';
+import { Role } from '@prisma/client';
+import { Roles } from '../auth/roles.decorator';
 
 
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UserService) {}
-
-  @Public()
-  @Post('create-admin')
-  createAdmin(@Body() createAdminDto: CreateUserAdminDto) {
-    return this.usersService.createAdmin(createAdminDto);
+constructor(private readonly usersService: UserService) {}
+@Roles(Role.ADMIN)
+@Post('create-admin')
+async  createAdmin(@Body() createAdminDto: CreateUserAdminDto) {
+    const result = await  this.usersService.createAdmin(createAdminDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'user created successfully',
+      data: result,
+    })
   }
 
-  @Public()
-  @Post('create-customer')
-  createCustomer(@Body() createCustomerDto: CreateCustomerDto) {
-    return this.usersService.createCustomer(createCustomerDto);
-  }
-
-
-  @Public()
+  @Roles(Role.ADMIN)
   @Get('/')
   async getUsers(@Req() req: Request) {
  

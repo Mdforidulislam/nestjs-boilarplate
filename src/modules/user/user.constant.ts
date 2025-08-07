@@ -20,4 +20,7 @@ export const userRangeFilter: rangeFilteringPrams[] = [
 ];
 
 // Prisma include configuration
-export const userInclude = {};
+export const userInclude = {
+  admin: true,
+  trader: true,
+};

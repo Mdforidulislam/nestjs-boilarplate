@@ -17,10 +17,12 @@ model User {
   email            String             @unique
   description      String?
   contactNo        String             @unique
+  stripeAccountId  String?
   password         String
   lang             Lang               @default(ENG)
   role             Role               @default(TRADER)
   avatar           String?
+  isVerified       Boolean            @default(false)   
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   admin            Admin?
@@ -47,10 +49,8 @@ model UserVerification {
   userId              String             @unique @db.ObjectId
   token               String?            @unique
   otp                 String?
-  isKYCVerifiedStripe Boolean
   documentUrl         String[]
   verificationType    VerificationStatus @default(UNVERIFIED)
-  isVerified          Boolean            @default(false)
   createdAt           DateTime           @default(now())
   expiresAt           DateTime
 
