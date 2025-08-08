@@ -1,16 +1,16 @@
 import { NestedFilter, rangeFilteringPrams } from '@/utils/queryBuilder';
 
 // Fields for basic filtering
-export const userFilterFields = [];
+export const SubscriptionFilterFields = [];
 
 // Fields for top-level search
-export const userSearchFields = ['username', 'email'];
+export const SubscriptionSearchFields = ['username', 'email'];
 
 // Nested filtering config
-export const userNestedFilters: NestedFilter[] = [];
+export const SubscriptionNestedFilters: NestedFilter[] = [];
 
 // Range-based filtering config
-export const userRangeFilter: rangeFilteringPrams[] = [
+export const SubscriptionRangeFilter: rangeFilteringPrams[] = [
   {
     field: 'createdAt',
     maxQueryKey: 'maxDate',
@@ -20,7 +20,9 @@ export const userRangeFilter: rangeFilteringPrams[] = [
 ];
 
 // Prisma include configuration
-export const userInclude = {
+export const SubscriptionInclude = {
   admin: true,
   trader: true,
 };
+
+

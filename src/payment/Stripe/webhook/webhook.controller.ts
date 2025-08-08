@@ -6,6 +6,7 @@ import {
   Headers,
   HttpStatus,
   UseGuards,
+  Get,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import Stripe from 'stripe';
@@ -51,6 +52,16 @@ export class WebhookController {
 
     // ✅ Forward the event to service for logic
     await this.webhookService.handleEvent(event);
+
+    return res.status(HttpStatus.OK).json({ received: true });
+  }
+
+  @Get()
+  @SkipThrottle()
+  @SkipRateLimit()
+  async handleWebhookGet(@Req() req: Request, @Res() res: Response, @Headers('stripe-signature') signature: string) {
+
+    console.log(signature,'signature checking from webhook get');
 
     return res.status(HttpStatus.OK).json({ received: true });
   }

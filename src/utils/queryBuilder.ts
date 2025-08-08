@@ -19,7 +19,7 @@ interface ApplyCondition {
   nestedField?: string;
   condition: Record<string, any>;
 }
-class QueryBuilderIsrafil<T> {
+class QueryBuilder<T> {
   private model: any;
   private query: Record<string, unknown>;
   private prismaQuery: Record<string, any> = {}; // Define as any for flexibility
@@ -331,7 +331,7 @@ class QueryBuilderIsrafil<T> {
   }
 }
 
-export default QueryBuilderIsrafil;
+export default QueryBuilder;
 
 function parseSelect(input: {
   own?: string[];

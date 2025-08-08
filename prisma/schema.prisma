@@ -113,7 +113,7 @@ model Category {
   updatedAt   DateTime      @updatedAt
   SubCategory SubCategory[]
   tasks       Task[]
-
+  
   @@map("categories")
 }
 
@@ -265,13 +265,14 @@ model Subscription {
 
 model SubscriptionPlan {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  plan          SubscribePlan  @default(PRO_PLAN)
+  plan          SubscribePlan  @default(PRO_PLAN)   @unique
   name          String
   description   String
   featuresList  String[]
   trialPeriod   Boolean        @default(false)
   price         Float          @default(0)
-  stripePriceId String         @default("")
+  stripeProductId String?      
+  stripePriceId String?         @default("")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   subscription  Subscription[]
@@ -279,10 +280,17 @@ model SubscriptionPlan {
   @@map("subscription_plans")
 }
 
+enum PaymentType {
+     SUBSCRIPTION
+     BOOTS_PAYMENT
+     TASK_PAYMENT
+}
+
 model Payment {
   id                 String        @id @default(auto()) @map("_id") @db.ObjectId
   customerId         String?
   brokerFirmId       String?
+  paymentType        PaymentType   @default(TASK_PAYMENT)
   amount             Float
   currency           String
   paymentDate        DateTime

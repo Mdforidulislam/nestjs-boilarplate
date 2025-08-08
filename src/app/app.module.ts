@@ -26,6 +26,7 @@ import { TaskManagementModule } from '@/modules/task_management/task_management.
 import { CustomerModule } from '@/modules/trader/customer.module';
 import { VerificationModule } from '@/modules/verification/verification.module';
 import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
+import { SubscriptionPlanModule } from '@/modules/subscription_plan/subscription_plan.module';
 
 
 @Module({
@@ -65,6 +66,7 @@ import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
     SubscriptionModule,
     TaskManagementModule,
     CustomerModule,
+    SubscriptionPlanModule,
     VerificationModule
   ],
   controllers: [AppController],

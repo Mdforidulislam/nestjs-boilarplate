@@ -1,34 +1,63 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
+import { ResponseService } from '@/utils/response';
 
 @Controller('subscription')
 export class SubscriptionController {
   constructor(private readonly subscriptionService: SubscriptionService) {}
 
   @Post()
-  create(@Body() createSubscriptionDto: CreateSubscriptionDto) {
-    return this.subscriptionService.create(createSubscriptionDto);
+ async create(@Body() createSubscriptionDto: CreateSubscriptionDto) {
+    const response = await  this.subscriptionService.create(createSubscriptionDto);
+    return ResponseService.formatResponse({
+      statusCode: 200,
+      message: 'Subscription Created Successfully',
+      data: response
+    });
   }
 
   @Get()
-  findAll() {
-    return this.subscriptionService.findAll();
+ async findAll(
+  @Query() query: Record<string, any>
+ ) {
+    const response = await  this.subscriptionService.findAll(query);
+    return ResponseService.formatResponse({
+      statusCode: 200,
+      message: 'Subscriptions Found Successfully',
+      data: response
+    });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.subscriptionService.findOne(+id);
+ async findOne(@Param('id') id: string) {
+    const response = await this.subscriptionService.findOne(id);
+    return ResponseService.formatResponse({
+      statusCode: 200,
+      message: 'Subscription Found Successfully',
+      data: response
+    });
+  
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto) {
-    return this.subscriptionService.update(+id, updateSubscriptionDto);
+ async update(@Param('id') id: string, @Body() updateSubscriptionDto: UpdateSubscriptionDto) {
+    const response = await this.subscriptionService.update(id, updateSubscriptionDto);
+    return ResponseService.formatResponse({
+      statusCode: 200,
+      message: 'Subscription Updated Successfully',
+      data: response
+    });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.subscriptionService.remove(+id);
+ async remove(@Param('id') id: string) {
+    const response = await this.subscriptionService.remove(id);
+    return ResponseService.formatResponse({
+      statusCode: 200,
+      message: 'Subscription Deleted Successfully',
+      data: response
+    });
   }
 }

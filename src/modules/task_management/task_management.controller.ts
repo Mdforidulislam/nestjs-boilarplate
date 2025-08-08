@@ -1,34 +1,62 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
 import { TaskManagementService } from './task_management.service';
-import { CreateTaskManagementDto } from './dto/create-task_management.dto';
+import { createCategoryDto, CreateTaskManagementDto } from './dto/create-task_management.dto';
 import { UpdateTaskManagementDto } from './dto/update-task_management.dto';
+import { ResponseService } from '@/utils/response';
 
 @Controller('task-management')
 export class TaskManagementController {
   constructor(private readonly taskManagementService: TaskManagementService) {}
 
-  @Post()
-  create(@Body() createTaskManagementDto: CreateTaskManagementDto) {
-    return this.taskManagementService.create(createTaskManagementDto);
+@Post()
+ async create(@Body() createTaskManagementDto: CreateTaskManagementDto) {
+    const result = await this.taskManagementService.create(createTaskManagementDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Created Successfully',
+      data: result
+    })
+  }
+ 
+
+@Get()
+ async findAll() {
+    const result = await this.taskManagementService.findAll();
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Found Successfully',
+      data: result
+    });
   }
 
-  @Get()
-  findAll() {
-    return this.taskManagementService.findAll();
+ @Get(':id')
+ async findOne(@Param('id') id: string) {
+    const result = await this.taskManagementService.findOne(id);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Found Successfully',
+      data: result
+    });
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.taskManagementService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTaskManagementDto: UpdateTaskManagementDto) {
-    return this.taskManagementService.update(+id, updateTaskManagementDto);
+ @Patch(':id')
+ async update(@Param('id') id: string, @Body() updateTaskManagementDto: UpdateTaskManagementDto) {
+    const result = await this.taskManagementService.update(id, updateTaskManagementDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Updated Successfully',
+      data: result
+    });
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.taskManagementService.remove(+id);
+ async remove(@Param('id') id: string) {
+    const result = await this.taskManagementService.remove(id);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Deleted Successfully',
+      data: result
+    });
   }
+
 }

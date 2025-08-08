@@ -1,9 +1,11 @@
+import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 //   apiVersion: '2023-10-16',
 });
 
+@Injectable()
 export class SuscriptionStripe {
   constructor() {}
 
@@ -18,7 +20,7 @@ export class SuscriptionStripe {
     currency?: string;
     matadata?: any;
   }): Promise<{productId: string; priceId: string}> {
-    const { name, amount, interval, currency = 'usd' , discription } = data;
+    const { name, amount, interval = 'month', currency = 'usd' , discription } = data;
 
     // 1. Create Product
     const product = await stripe.products.create({
@@ -28,7 +30,7 @@ export class SuscriptionStripe {
     });
 
     const price = await stripe.prices.create({
-                unit_amount: amount * 100,
+                unit_amount: Math.round(amount * 100),
                 currency: currency,
                 recurring: { interval: interval },
                 product: product?.id,
@@ -184,18 +186,6 @@ export class SuscriptionStripe {
     });
 
 
-    function sanitizeMetadata(data: any): Record<string, string> {
-         const safe: Record<string, string> = {};
-
-          if (data && typeof data === 'object') {
-            for (const key in data) {
-              const value = data[key];
-              safe[key] = typeof value === 'string' ? value : JSON.stringify(value);
-            }
-          };
-          return safe;
-    }
-
     if(subscriptionType === "sesstion") {
       const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -237,27 +227,30 @@ export class SuscriptionStripe {
 
     async updateSubscription(data: {
     subscriptionId?: string;
-    newPriceId: string;
-    customerId: string
   }) {
 
-    const { subscriptionId } = data;
+     try{
+        const { subscriptionId } = data;
     const latesSubsription = await stripe.subscriptions.retrieve(subscriptionId);
+
+    console.log(latesSubsription, 'latesSubsription');
+
     if(!latesSubsription) {
       return {message:"Your subscritipon not availbe"}
     }
 
     const sesstion = await stripe.billingPortal.sessions.create({
       customer: latesSubsription.customer as string,
-      return_url: ""
+      return_url: `${process.env.CLIENT_URL}/profile`,
     })
 
     return {
      renualURL:  sesstion.url
     }
+     }catch (error: any) {
+      console.error(' Stripe API error:', error.message);
+    }
   }
-
-
 
   /**
    *  Cancel an existing subscription
@@ -306,8 +299,4 @@ export class SuscriptionStripe {
       }
     }
   }
- 
-
-
-
 }

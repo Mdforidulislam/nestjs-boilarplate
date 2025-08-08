@@ -1,34 +1,63 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Query } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
+import { ResponseService } from '@/utils/response';
 
 @Controller('payment')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post()
-  create(@Body() createPaymentDto: CreatePaymentDto) {
-    return this.paymentService.create(createPaymentDto);
+ async create(@Body() createPaymentDto: CreatePaymentDto) {
+    const result = await this.paymentService.create(createPaymentDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Payment Created Successfully',
+      data: result
+    })
   }
 
   @Get()
-  findAll() {
-    return this.paymentService.findAll();
+ async findAll(
+  @Query() query: Record<string, any>,
+ ) {
+    const result = await this.paymentService.findAll();
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Payment Found Successfully',
+      data: result
+    })
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentService.findOne(+id);
-  }
+async  findOne(@Param('id') id: string) {
+    const result = await this.paymentService.findOne(id);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Payment Found Successfully',
+      data: result
+    })
+}
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
-    return this.paymentService.update(+id, updatePaymentDto);
+async  update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
+    const result = await this.paymentService.update(id, updatePaymentDto);
+  
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Payment Updated Successfully',
+      data: result
+    })
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.paymentService.remove(+id);
+ async remove(@Param('id') id: string) {
+    const result = await this.paymentService.remove(id);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Payment Deleted Successfully',
+      data: result
+    })
   }
 }

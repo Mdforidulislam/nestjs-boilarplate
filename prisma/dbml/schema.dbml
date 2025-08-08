@@ -32,10 +32,8 @@ Table user_verifications {
   userId String [unique, not null]
   token String [unique]
   otp String
-  isKYCVerifiedStripe Boolean [not null]
   documentUrl String[] [not null]
   verificationType VerificationStatus [not null, default: 'UNVERIFIED']
-  isVerified Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   expiresAt DateTime [not null]
   user users [not null]
@@ -201,13 +199,14 @@ Table subscriptions {
 
 Table subscription_plans {
   id String [pk]
-  plan SubscribePlan [not null, default: 'PRO_PLAN']
+  plan SubscribePlan [unique, not null, default: 'PRO_PLAN']
   name String [not null]
   description String [not null]
   featuresList String[] [not null]
   trialPeriod Boolean [not null, default: false]
   price Float [not null, default: 0]
-  stripePriceId String [not null, default: '']
+  stripeProductId String
+  stripePriceId String [default: '']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   subscription subscriptions [not null]
@@ -217,6 +216,7 @@ Table payments {
   id String [pk]
   customerId String
   brokerFirmId String
+  paymentType PaymentType [not null, default: 'TASK_PAYMENT']
   amount Float [not null]
   currency String [not null]
   paymentDate DateTime [not null]
@@ -329,6 +329,12 @@ Enum AplicationStatus {
 Enum FavouriteType {
   TASK
   TRADER
+}
+
+Enum PaymentType {
+  SUBSCRIPTION
+  BOOTS_PAYMENT
+  TASK_PAYMENT
 }
 
 Enum RoomType {

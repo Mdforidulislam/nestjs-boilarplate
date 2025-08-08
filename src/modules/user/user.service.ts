@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma, Role, User } from '@prisma/client';
 import { ApiError } from 'src/utils/api_error';
 import { BcryptService } from 'src/utils/bcrypt.service';
-import QueryBuilderIsrafil from '@/utils/queryBuilderIsrafil';
+import QueryBuilderIsrafil from '@/utils/queryBuilder';
 
 import {
   userFilterFields,
@@ -15,6 +15,7 @@ import {
 } from './user.constant';
 
 import { CreateUserAdminDto } from './dto/create-admin.dto';
+import QueryBuilder from '@/utils/queryBuilder';
 
 
 @Injectable()
@@ -103,7 +104,7 @@ export class UserService {
   }
 
   async getMany(query: Record<string, string>) {
-    const queryBuilder = new QueryBuilderIsrafil(query, this.prisma.user);
+    const queryBuilder = new QueryBuilder(query, this.prisma.user);
     const result = await queryBuilder
 
       .filter(userFilterFields)

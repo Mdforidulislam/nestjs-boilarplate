@@ -53,7 +53,7 @@ export class WebhookService {
               // Step 3: Build Payment data
           await this.prisma.payment.create({
                 data: {
-                  ...(metadata.userType === 'BROKER_FIRM' ? { brokerFirmId: metadata.ownerId } : { customerId: metadata.ownerId }),
+                  customerId: metadata.ownerId, 
                   amount: invoice.amount_paid / 100,
                   currency: invoice.currency,
                   paymentDate: new Date(invoice.created * 1000),
@@ -65,9 +65,6 @@ export class WebhookService {
         } catch (error) {
           console.error('Error fetching subscription:', error);
         }
- 
-
-
         break;
       }
 
@@ -78,6 +75,7 @@ export class WebhookService {
         const customerId = subscription.customer as string;
         const expiredAt = subscription.cancel_at_period_end;
         const metadata = subscription.metadata || {};
+        const isCancel = subscription.cancel_at_period_end;
 
         console.log('Subscription Updated:', subscription);
         console.log('Metadata:', metadata);
@@ -85,13 +83,23 @@ export class WebhookService {
         console.log('Customer ID:', customerId);
         console.log('Subscription ID:', subscriptionId);
 
+        await this.prisma.subscription.update({
+          where: {
+            id: metadata.subscriptionId, // Ensure metadata.subscriptionId contains the unique subscription id
+          },
+          data: {
+            subscriptionStatus: isCancel ? 'CANCELLED' : 'ACTIVE',
+            stripeSubscriptionId: subscriptionId,
+            subscriptionPlanId: metadata.subscriptionPlanId,
+          }
+        })
+
+
         break;
       }
 
       case 'customer.subscription.deleted': {
         const stripeSubscription = event.data.object as Stripe.Subscription;
-
-        console.log('Subscription Deleted:', stripeSubscription);
 
         const subscriptionId = stripeSubscription.id;
         const customerId = stripeSubscription.customer as string;
@@ -103,6 +111,16 @@ export class WebhookService {
         console.log('Expired At:', expiredAt);
         console.log('Metadata:', metadata);
         
+        await this.prisma.subscription.update({
+          where: {
+            id: metadata.subscriptionId, 
+          },
+          data: {
+            subscriptionStatus: 'CANCELLED',
+            stripeSubscriptionId: subscriptionId,
+            subscriptionPlanId: metadata.subscriptionPlanId,
+          }
+        })
 
         break;
       }
@@ -136,6 +154,7 @@ export class WebhookService {
             account.requirements.past_due.length === 0
           ) {
             console.log(`Stripe account ${account.id} is verified!`);
+            console.log(account,'checking account');
 
               this.prisma.user.update({
                 where:{
@@ -144,10 +163,10 @@ export class WebhookService {
                 data:{
                   isVerified: true
                 }
-              })
+              });
           }
         }
-        console.log('Account Updated:', account);
+ 
         break;
       }
       default:
