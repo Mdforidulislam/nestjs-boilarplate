@@ -11,7 +11,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
-import { Public } from '../auth/auth.decorator';
+import { IsPublic } from '../auth/auth.decorator';
 import { ResponseService } from '@/utils/response';
 
 
@@ -19,7 +19,7 @@ import { ResponseService } from '@/utils/response';
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
-  @Public()
+  @IsPublic()
   @Get(`admin`)
   // @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   async findAll() {

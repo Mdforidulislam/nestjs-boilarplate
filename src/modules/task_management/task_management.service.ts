@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { createCategoryDto, CreateTaskManagementDto } from './dto/create-task_management.dto';
+import { CreateTaskManagementDto } from './dto/create-task_management.dto';
 import { UpdateTaskManagementDto } from './dto/update-task_management.dto';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
-import QueryBuilderIsrafil from '@/utils/queryBuilder';
+import QueryBuilder from '@/utils/queryBuilder';
+import { AplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class TaskManagementService {
@@ -14,20 +15,30 @@ constructor(
 ) {}
 async create(createTaskManagementDto: CreateTaskManagementDto) {
   try{
+     console.log(createTaskManagementDto,'createTaskManagementDto');
+   
+
+
      return await this.prisma.$transaction(async (tx) => {
 
     const trader = await tx.trader.findFirst({
       where: { id: createTaskManagementDto.traderId },
+      include:{
+        subscription: true
+      }    
     });
 
+
     if (!trader) {
-      throw new Error("Trader not found");
+
+      return "Trader not found";
     }
 
     if (!trader.isVerified) {
-      throw new Error("Trader is not verified");
+      return "Trader is not verified";
     }
 
+  
     const duplicateTask = await tx.task.findFirst({
       where: {
         title: createTaskManagementDto.title,
@@ -56,19 +67,57 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
 }
 
 
- async findAll() {
-    return `This action returns all taskManagement`;
+ async findAll(
+    query: Record<string, any>,
+ ) {
+  
+    const queryBuilder = new QueryBuilder(query, this.prisma.task);
+    const result = await queryBuilder
+      .filter()
+      .search([])
+      .nestedFilter([])
+      .sort()
+      .paginate()
+      .include({})
+      .fields()
+      .filterByRange([])
+      .execute();
+    const meta = await queryBuilder.countTotal();
+    return { meta, data: result };
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} taskManagement`;
+async findOne(id: string) {
+  const task = await this.prisma.task.findUnique({ where: { id } });
+  if (!task) {
+      return "Task not found";
+  }
+  return task;
+}
+
+ async update(id: string, updateTaskManagementDto: UpdateTaskManagementDto) {
+  this.prismaHelper.validateEntityExistence("task",id,"Task not found")
+  
+  
+  return await this.prisma.task.update({where: {id}, data: updateTaskManagementDto});
+}
+
+ async remove(id: string) {
+
+  this.prismaHelper.validateEntityExistence("task",id,"Task not found")
+
+  const application = await this.prisma.task_Application.findFirst({
+    where: {
+      taskId: id,
+      status: AplicationStatus.APPROVED
+    },
+  });
+
+  if (application) {
+    return "Cannot delete task with approved applications";
   }
 
-  update(id: string, updateTaskManagementDto: UpdateTaskManagementDto) {
-    return `This action updates a #${id} taskManagement`;
-  }
 
-  remove(id: string) {
-    return `This action removes a #${id} taskManagement`;
-  }
+  return await this.prisma.task.delete({where: {id}});
+
+}
 }

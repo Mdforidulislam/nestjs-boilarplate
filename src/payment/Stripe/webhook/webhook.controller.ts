@@ -14,9 +14,9 @@ import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
 import { SkipThrottle } from '@nestjs/throttler';
 import { SkipRateLimit } from '@/utils/skip.ratelimite';
-import { Public } from '@/modules/auth/auth.decorator';
+import { IsPublic } from '@/modules/auth/auth.decorator';
 
-@Public()
+@IsPublic()
 @Controller('webhook')
 export class WebhookController {
   private stripe: Stripe;

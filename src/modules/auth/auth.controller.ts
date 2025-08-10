@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { Public } from './auth.decorator';
+import { IsPublic } from './auth.decorator';
 import { Request } from 'express';
 import { ResponseService } from '@/utils/response';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -29,7 +29,7 @@ export class AuthController {
 
 
   @HttpCode(HttpStatus.OK)
-  @Public()
+  @IsPublic()
   @Post('register')
   @ApiOperation({ summary: 'User Register' })
   async register(@Body() registerDto: any) {
@@ -42,7 +42,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Public()
+  @IsPublic()
   @Post('login')
   @ApiOperation({ summary: 'User Login' })
   async signIn(

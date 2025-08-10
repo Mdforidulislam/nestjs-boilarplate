@@ -90,9 +90,7 @@ model Trader {
   isDeleted        Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  reqestByTrader   Task_Application[] @relation("RequestByTraderToTask")
-  offerByTrader    Task_Application[] @relation("OffersByTraderToTask")
+  offerByTrader    Task_Application[] 
   favoriteByTrader Favourite[]
   tasks            Task[]
   Bosting_task     Bosting_task[]
@@ -106,7 +104,7 @@ model Trader {
 model Category {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   name        String        @unique
-  file        String[]
+  files        String[]
   icon        String?
   description String?
   createdAt   DateTime      @default(now())
@@ -121,7 +119,7 @@ model SubCategory {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   categoryId  String   @db.ObjectId
-  file        String[]
+  files        String[]
   icon        String?
   description String?
   createdAt   DateTime @default(now())
@@ -159,6 +157,7 @@ model Task {
   description      String?
   deadline         DateTime?
   tags             String[]
+  files            String[]
   isActive         Boolean            @default(true)
   status           TaskStatus         @default(PENDING)
   createdAt        DateTime           @default(now())
@@ -169,9 +168,9 @@ model Task {
   category         Category           @relation(fields: [categoryid], references: [id])
   subCategoryid    String?            @db.ObjectId
   subCategory      SubCategory?       @relation(fields: [subCategoryid], references: [id])
-  Favourites       Favourite[]
-  Bosting_tasks    Bosting_task[]
-  Task_Application Task_Application[]
+  favourites       Favourite[]
+  bosting_tasks    Bosting_task[]
+  task_Application Task_Application[]
   review           Review[]
 
   @@map("tasks")
@@ -189,10 +188,8 @@ model Task_Application {
   status         AplicationStatus @default(IN_PROGRESS)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
-  requestId      String           @db.ObjectId
-  reqestByTrader Trader           @relation("RequestByTraderToTask", fields: [requestId], references: [id])
   offerId        String           @db.ObjectId
-  offerByTrader  Trader           @relation("OffersByTraderToTask", fields: [offerId], references: [id])
+  offerByTrader  Trader           @relation(fields: [offerId], references: [id])
   taskId         String           @db.ObjectId
   task           Task             @relation(fields: [taskId], references: [id])
 

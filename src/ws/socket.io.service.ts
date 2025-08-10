@@ -66,17 +66,17 @@ export class WebsocketGateway
 
   @SubscribeMessage('authenticate')
   async handleAuthenticate(
-    @MessageBody() payload: { token: string },
     @ConnectedSocket() socket: Socket,
   ) {
-    const { token } = payload;
+    const tokenheader = socket.handshake.headers['authorization'];
 
-    if (!token) {
+
+    if (!tokenheader) {
       socket.disconnect(true);
       return;
     }
     try {
-      const user = await this.jwtService.verifyAsync(token);
+      const user = await this.jwtService.verifyAsync(tokenheader);
 
       console.log(`see payload`, user);
 

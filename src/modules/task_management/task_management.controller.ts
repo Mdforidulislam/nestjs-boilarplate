@@ -1,17 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
 import { TaskManagementService } from './task_management.service';
-import { createCategoryDto, CreateTaskManagementDto } from './dto/create-task_management.dto';
+import {  CreateTaskManagementDto } from './dto/create-task_management.dto';
 import { UpdateTaskManagementDto } from './dto/update-task_management.dto';
 import { ResponseService } from '@/utils/response';
+import { CustomFileFieldsInterceptor } from '@/helper/file_interceptor';
+import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
+import { IsPublic } from '../auth/auth.decorator';
 
 @Controller('task-management')
 export class TaskManagementController {
   constructor(private readonly taskManagementService: TaskManagementService) {}
 
 @Post()
- async create(@Body() createTaskManagementDto: CreateTaskManagementDto) {
-    const result = await this.taskManagementService.create(createTaskManagementDto);
-    return ResponseService.formatResponse({
+@Roles(Role.ADMIN, Role.TRADER)
+@UseInterceptors(
+    CustomFileFieldsInterceptor([
+      { name: 'files', maxCount: 10 }
+    ]), 
+    ParseFormDataInterceptor,  
+
+)  
+ async create(
+  @Body() createTaskManagementDto: CreateTaskManagementDto,
+  @UploadedFiles() files: Record<string, Express.Multer.File[]>,
+) {
+
+  let fileUrls: string[] = [];
+  if (files) {
+    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+  }
+  
+  const result = await this.taskManagementService.create({
+    ...createTaskManagementDto,
+    attachments: fileUrls ? fileUrls : null,
+  });
+
+  return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Management Created Successfully',
       data: result
@@ -19,9 +45,13 @@ export class TaskManagementController {
   }
  
 
+@IsPublic()
 @Get()
- async findAll() {
-    const result = await this.taskManagementService.findAll();
+
+ async findAll(
+  @Query() query: Record<string, any>,
+ ) {
+    const result = await this.taskManagementService.findAll(query);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Management Found Successfully',
@@ -29,6 +59,8 @@ export class TaskManagementController {
     });
   }
 
+@IsPublic()
+//  @Roles(Role.ADMIN, Role.TRADER)
  @Get(':id')
  async findOne(@Param('id') id: string) {
     const result = await this.taskManagementService.findOne(id);
@@ -39,9 +71,26 @@ export class TaskManagementController {
     });
   }
 
- @Patch(':id')
- async update(@Param('id') id: string, @Body() updateTaskManagementDto: UpdateTaskManagementDto) {
-    const result = await this.taskManagementService.update(id, updateTaskManagementDto);
+@Roles(Role.ADMIN, Role.TRADER)
+@Patch(':id')
+@UseInterceptors(
+    CustomFileFieldsInterceptor([
+      { name: 'files', maxCount: 10 },
+      { name: "icon", maxCount: 1 },
+    ]), 
+    ParseFormDataInterceptor,  
+
+)
+ async update(
+  @Param('id') id: string,
+  @Body() updateTaskManagementDto: UpdateTaskManagementDto,
+  @UploadedFiles() files: Record<string, Express.Multer.File[]>,
+  ) {
+  let fileUrls: string[] = [];
+  if (files) {
+    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+  }
+    const result = await this.taskManagementService.update(id, {...updateTaskManagementDto, attachments: fileUrls});
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Management Updated Successfully',
@@ -49,8 +98,9 @@ export class TaskManagementController {
     });
   }
 
-  @Delete(':id')
- async remove(@Param('id') id: string) {
+@Roles(Role.ADMIN, Role.TRADER)
+@Delete(':id')
+async remove(@Param('id') id: string) {
     const result = await this.taskManagementService.remove(id);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,

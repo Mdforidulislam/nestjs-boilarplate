@@ -9,6 +9,7 @@ import { SubscriptionFilterFields, SubscriptionInclude, SubscriptionRangeFilter 
 import { sub } from 'date-fns';
 import e from 'express';
 import { Subscription } from '@prisma/client';
+import QueryBuilder from '@/utils/queryBuilder';
 
 @Injectable()
 
@@ -71,7 +72,7 @@ export class SubscriptionService {
 }
 
  async findAll(query: Record<string, any>) {
-          const queryBuilder = new QueryBuilderIsrafil(query, this.prisma.subscription);
+    const queryBuilder = new QueryBuilder(query, this.prisma.subscription);
     const result = await queryBuilder
 
       .filter()

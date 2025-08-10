@@ -12,8 +12,9 @@ import {
 } from 'class-validator';
 
 export class CreateTaskCategoryDto {
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
   @IsString()
   @IsOptional()
@@ -22,7 +23,7 @@ export class CreateTaskCategoryDto {
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  file?: string[];
+  files?: string[];
 
   @IsString()
   @IsOptional()
@@ -30,7 +31,7 @@ export class CreateTaskCategoryDto {
 
   @IsMongoId()
   @IsOptional()
-  categoryid?: string;
+  categoryId?: string;
 
   @IsMongoId()
   @IsOptional()

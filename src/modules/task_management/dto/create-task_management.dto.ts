@@ -7,7 +7,8 @@ import {
   IsDateString,
   IsBoolean,
   IsEnum,
-  IsMongoId
+  IsMongoId,
+  isArray
 } from 'class-validator';
 import { TaskType, TaskStatus } from '@prisma/client';
 
@@ -35,6 +36,7 @@ export class CreateTaskManagementDto {
   @IsString({ each: true })
   require_skills: string[];
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   attachments: string[];
@@ -45,7 +47,7 @@ export class CreateTaskManagementDto {
 
   @IsDateString()
   @IsOptional()
-  deadline?: Date;
+  deadline?: string;
 
   @IsArray()
   @IsString({ each: true })
@@ -70,31 +72,3 @@ export class CreateTaskManagementDto {
   subCategoryid?: string;
 }
 
-
-
-export class createCategoryDto {
-  @IsString()
-  name: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  file?: string[];
-
-  @IsString()
-  @IsOptional()
-  icon?: string;
-
-  @IsMongoId()
-  @IsOptional()
-  categoryid?: string;
-
-  @IsMongoId()
-  @IsOptional()
-  subCategoryid?: string;
-
-}

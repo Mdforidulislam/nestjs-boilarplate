@@ -7,6 +7,7 @@ import { AppModule } from '@/app/app.module';
 import * as fs from 'fs';
 import * as express from 'express';
 import { StripeSingleton } from './payment/Stripe/stripe.connection';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -18,6 +19,8 @@ async function bootstrap() {
     }),
     rawBody: true,
   });
+
+
 
   app.enableCors({
     origin: [

@@ -27,6 +27,10 @@ import { CustomerModule } from '@/modules/trader/customer.module';
 import { VerificationModule } from '@/modules/verification/verification.module';
 import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
 import { SubscriptionPlanModule } from '@/modules/subscription_plan/subscription_plan.module';
+import { TaskCategoryModule } from '@/modules/task_category/task_category.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { TaskApplicationModule } from '@/modules/task_application/task_application.module';
 
 
 @Module({
@@ -34,6 +38,10 @@ import { SubscriptionPlanModule } from '@/modules/subscription_plan/subscription
     ConfigModule.forRoot({
       isGlobal: true,
       load: [config],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'tmp'),
+      serveRoot: '/tmp',
     }),
     ThrottlerModule.forRoot({
       throttlers: [
@@ -67,7 +75,9 @@ import { SubscriptionPlanModule } from '@/modules/subscription_plan/subscription
     TaskManagementModule,
     CustomerModule,
     SubscriptionPlanModule,
-    VerificationModule
+    VerificationModule,
+    TaskCategoryModule,
+    TaskApplicationModule
   ],
   controllers: [AppController],
   providers: [

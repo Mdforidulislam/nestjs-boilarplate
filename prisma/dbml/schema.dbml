@@ -70,7 +70,6 @@ Table traders {
   isDeleted Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  reqestByTrader task_applications [not null]
   offerByTrader task_applications [not null]
   favoriteByTrader favourites [not null]
   tasks tasks [not null]
@@ -83,7 +82,7 @@ Table traders {
 Table categories {
   id String [pk]
   name String [unique, not null]
-  file String[] [not null]
+  files String[] [not null]
   icon String
   description String
   createdAt DateTime [default: `now()`, not null]
@@ -96,7 +95,7 @@ Table sub_categories {
   id String [pk]
   name String [not null]
   categoryId String [not null]
-  file String[] [not null]
+  files String[] [not null]
   icon String
   description String
   createdAt DateTime [default: `now()`, not null]
@@ -117,6 +116,7 @@ Table tasks {
   description String
   deadline DateTime
   tags String[] [not null]
+  files String[] [not null]
   isActive Boolean [not null, default: true]
   status TaskStatus [not null, default: 'PENDING']
   createdAt DateTime [default: `now()`, not null]
@@ -127,9 +127,9 @@ Table tasks {
   category categories [not null]
   subCategoryid String
   subCategory sub_categories
-  Favourites favourites [not null]
-  Bosting_tasks bosting_tasks [not null]
-  Task_Application task_applications [not null]
+  favourites favourites [not null]
+  bosting_tasks bosting_tasks [not null]
+  task_Application task_applications [not null]
   review reviews [not null]
 }
 
@@ -138,8 +138,6 @@ Table task_applications {
   status AplicationStatus [not null, default: 'IN_PROGRESS']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  requestId String [not null]
-  reqestByTrader traders [not null]
   offerId String [not null]
   offerByTrader traders [not null]
   taskId String [not null]
@@ -400,8 +398,6 @@ Ref: tasks.traderId > traders.id
 Ref: tasks.categoryid > categories.id
 
 Ref: tasks.subCategoryid > sub_categories.id
-
-Ref: task_applications.requestId > traders.id
 
 Ref: task_applications.offerId > traders.id
 
