@@ -54,7 +54,7 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
       data: {
         ...createTaskManagementDto,
         taskType: createTaskManagementDto.taskType ?? 'PAYMENT',
-        status: createTaskManagementDto.status ?? 'PENDING',
+        status: createTaskManagementDto.status ?? 'IN_PROGRESS',
         isActive: createTaskManagementDto.isActive ?? true,
       },
     });

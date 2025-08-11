@@ -71,10 +71,12 @@ Table traders {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   offerByTrader task_applications [not null]
+  traderOwner favourites [not null]
   favoriteByTrader favourites [not null]
   tasks tasks [not null]
   Bosting_task bosting_tasks [not null]
-  reviews reviews [not null]
+  reviewProvider reviews [not null]
+  reviewReceiver reviews [not null]
   payment payments [not null]
   subscription subscriptions [not null]
 }
@@ -112,13 +114,13 @@ Table tasks {
   max_salary Float
   min_salary Float
   require_skills String[] [not null]
-  attachments String[] [not null]
+  provide_attachments String[] [not null]
   description String
   deadline DateTime
   tags String[] [not null]
   files String[] [not null]
   isActive Boolean [not null, default: true]
-  status TaskStatus [not null, default: 'PENDING']
+  status TaskStatus [not null, default: 'IN_PROGRESS']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   traderId String
@@ -146,12 +148,13 @@ Table task_applications {
 
 Table favourites {
   id String [pk]
-  userId String [not null]
   type FavouriteType [not null, default: 'TASK']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  traderOwnerId String [not null]
+  traderOwner traders [not null]
   favoriteByTraderId String
-  favouriteByTrader traders
+  favoriteByTrader traders
   taskId String
   task tasks
 }
@@ -159,20 +162,22 @@ Table favourites {
 Table reviews {
   id String [pk]
   taskId String [not null]
-  traderid String [not null]
   rating Int [not null]
   comment String
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   task tasks [not null]
-  trader traders [not null]
+  reviewReceiverId String
+  reviewReceiver traders
+  reviewProviderId String
+  reviewProvider traders
 }
 
 Table bosting_tasks {
   id String [pk]
   taskId String [not null]
   traderId String [not null]
-  status TaskStatus [not null, default: 'PENDING']
+  status Bosting_Status [not null, default: 'ACTIVE']
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   task tasks [not null]
@@ -308,9 +313,7 @@ Enum TaskType {
 }
 
 Enum TaskStatus {
-  PENDING
   IN_PROGRESS
-  ON_HOLD
   ORDER_ACTIVE
   DELIVERED
   COMPLETED
@@ -320,13 +323,18 @@ Enum TaskStatus {
 Enum AplicationStatus {
   IN_PROGRESS
   REJECTED
-  CANCELED
   APPROVED
 }
 
 Enum FavouriteType {
   TASK
   TRADER
+}
+
+Enum Bosting_Status {
+  ACTIVE
+  INACTIVE
+  CANCELED
 }
 
 Enum PaymentType {
@@ -403,13 +411,17 @@ Ref: task_applications.offerId > traders.id
 
 Ref: task_applications.taskId > tasks.id
 
+Ref: favourites.traderOwnerId > traders.id
+
 Ref: favourites.favoriteByTraderId > traders.id
 
 Ref: favourites.taskId > tasks.id
 
 Ref: reviews.taskId > tasks.id
 
-Ref: reviews.traderid > traders.id
+Ref: reviews.reviewReceiverId > traders.id
+
+Ref: reviews.reviewProviderId > traders.id
 
 Ref: bosting_tasks.taskId > tasks.id
 

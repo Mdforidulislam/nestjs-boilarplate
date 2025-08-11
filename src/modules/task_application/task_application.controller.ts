@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpStatus, Req, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { TaskApplicationService } from './task_application.service';
 import { CreateTaskApplicationDto } from './dto/create-task_application.dto';
 import { UpdateTaskApplicationDto } from './dto/update-task_application.dto';
@@ -7,6 +7,8 @@ import { PrismaHelperService } from '@/utils/is_existance';
 import { ResponseService } from '@/utils/response';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
+import { CustomFileFieldsInterceptor } from '@/helper/file_interceptor';
+import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
 
 @Controller('task-application')
 export class TaskApplicationController {
@@ -27,13 +29,14 @@ export class TaskApplicationController {
     })
   }
 
-  @Get()
+  @Get("offer")
   @Roles(Role.TRADER, Role.ADMIN)
  async  OfferTaskFindAll(
     @Query() query: Record<string, any>,
     @Req() req: any,
   ) {
   const user = req?.user;
+  console.log(user, 'user');
   const result = await this.taskApplicationService.OfferAll(query, user);
   return ResponseService.formatResponse({
     statusCode: HttpStatus.OK,
@@ -44,12 +47,15 @@ export class TaskApplicationController {
 
 }
 
- @Get()
+ @Get("request")
  @Roles(Role.TRADER, Role.ADMIN)
  async  ReestTaskFindAll(
     @Query() query: Record<string, any>,
     @Req() req: any,
   ) {
+
+
+
   const user = req?.user;
   const result = await this.taskApplicationService.RequestAll(query, user);
   return ResponseService.formatResponse({
@@ -60,7 +66,7 @@ export class TaskApplicationController {
 }
 
 
-  @Get(':id')
+  @Get('offer/:id')
   @Roles(Role.TRADER, Role.ADMIN)
  async findOneOffer(@Param('id') id: string) {
     const result = await this.taskApplicationService.findOneOffer(id);
@@ -72,9 +78,11 @@ export class TaskApplicationController {
   }
 
 
-  @Get(':id')
+  @Get('request/:id')
   @Roles(Role.TRADER, Role.ADMIN)
- async findOneRequest(@Param('id') id: string) {
+ async findOneRequest(
+  @Param('id') id: string,
+) {
     const result = await this.taskApplicationService.findOneRequest(id);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
@@ -84,7 +92,7 @@ export class TaskApplicationController {
   }
 
 
-  @Patch(':id')
+  @Patch('offer/:id')
   @Roles(Role.TRADER, Role.ADMIN)
   async  updateOneOffer(@Param('id') id: string, @Body() updateTaskApplicationDto: UpdateTaskApplicationDto) {
     const result = await  this.taskApplicationService.updateOffer(id, updateTaskApplicationDto);
@@ -97,9 +105,28 @@ export class TaskApplicationController {
 
 
 
-  @Patch(':id')
+  @Patch('request/:id')
   @Roles(Role.TRADER, Role.ADMIN)
-  async  updateOneRequest(@Param('id') id: string, @Body() updateTaskApplicationDto: UpdateTaskApplicationDto) {
+  @UseInterceptors(
+     CustomFileFieldsInterceptor([
+       { name: 'files', maxCount: 10 },
+       { name: "icon", maxCount: 1 },
+     ]), 
+     ParseFormDataInterceptor,  
+   ) 
+  async  updateOneRequest(
+    @Param('id') id: string, 
+    @UploadedFiles() files: Record<string, Express.Multer.File[]>,
+    @Body() updateTaskApplicationDto: UpdateTaskApplicationDto
+  ) {
+
+   let fileUrls: string[] = [];
+  if (files) {
+    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+  }
+
+  updateTaskApplicationDto.provide_attachments = fileUrls
+
     const result = await  this.taskApplicationService.updateRequest(id, updateTaskApplicationDto);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,

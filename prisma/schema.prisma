@@ -22,7 +22,7 @@ model User {
   lang             Lang               @default(ENG)
   role             Role               @default(TRADER)
   avatar           String?
-  isVerified       Boolean            @default(false)   
+  isVerified       Boolean            @default(false)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
   admin            Admin?
@@ -45,14 +45,14 @@ enum VerificationStatus {
 }
 
 model UserVerification {
-  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
-  userId              String             @unique @db.ObjectId
-  token               String?            @unique
-  otp                 String?
-  documentUrl         String[]
-  verificationType    VerificationStatus @default(UNVERIFIED)
-  createdAt           DateTime           @default(now())
-  expiresAt           DateTime
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String             @unique @db.ObjectId
+  token            String?            @unique
+  otp              String?
+  documentUrl      String[]
+  verificationType VerificationStatus @default(UNVERIFIED)
+  createdAt        DateTime           @default(now())
+  expiresAt        DateTime
 
   user User @relation(fields: [userId], references: [id])
 
@@ -71,10 +71,10 @@ model Admin {
 }
 
 model Trader {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String   @unique @db.ObjectId
-  user             User     @relation(fields: [userId], references: [id])
-  isActive         Boolean  @default(true)
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String             @unique @db.ObjectId
+  user             User               @relation(fields: [userId], references: [id])
+  isActive         Boolean            @default(true)
   stripeAccountId  String?
   fastName         String?
   lastName         String?
@@ -86,17 +86,19 @@ model Trader {
   attachments      String[]
   resumeFile       String?
   socialMediaLink  String[]
-  isVerified       Boolean  @default(false)
-  isDeleted        Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  offerByTrader    Task_Application[] 
-  favoriteByTrader Favourite[]
+  isVerified       Boolean            @default(false)
+  isDeleted        Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  offerByTrader    Task_Application[]
+  traderOwner      Favourite[]        @relation("traderOwner")
+  favoriteByTrader Favourite[]        @relation("favoriteByTrader")
   tasks            Task[]
   Bosting_task     Bosting_task[]
-  reviews          Review[]
-  payment          Payment[]
-  subscription     Subscription[]
+  reviewProvider   Review[]           @relation("reviewProvider")
+  reviewReceiver   Review[]           @relation("reviewReceiver")
+  payment      Payment[]
+  subscription Subscription[]
 
   @@map("traders")
 }
@@ -104,14 +106,14 @@ model Trader {
 model Category {
   id          String        @id @default(auto()) @map("_id") @db.ObjectId
   name        String        @unique
-  files        String[]
+  files       String[]
   icon        String?
   description String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   SubCategory SubCategory[]
   tasks       Task[]
-  
+
   @@map("categories")
 }
 
@@ -119,7 +121,7 @@ model SubCategory {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   categoryId  String   @db.ObjectId
-  files        String[]
+  files       String[]
   icon        String?
   description String?
   createdAt   DateTime @default(now())
@@ -136,9 +138,7 @@ enum TaskType {
 }
 
 enum TaskStatus {
-  PENDING
   IN_PROGRESS
-  ON_HOLD
   ORDER_ACTIVE
   DELIVERED
   COMPLETED
@@ -146,32 +146,32 @@ enum TaskStatus {
 }
 
 model Task {
-  id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  title            String
-  taskType         TaskType           @default(PAYMENT)
-  location         String?
-  max_salary       Float?
-  min_salary       Float?
-  require_skills   String[]
-  attachments      String[]
-  description      String?
-  deadline         DateTime?
-  tags             String[]
-  files            String[]
-  isActive         Boolean            @default(true)
-  status           TaskStatus         @default(PENDING)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  traderId         String?            @db.ObjectId
-  trader           Trader?            @relation(fields: [traderId], references: [id])
-  categoryid       String             @db.ObjectId
-  category         Category           @relation(fields: [categoryid], references: [id])
-  subCategoryid    String?            @db.ObjectId
-  subCategory      SubCategory?       @relation(fields: [subCategoryid], references: [id])
-  favourites       Favourite[]
-  bosting_tasks    Bosting_task[]
-  task_Application Task_Application[]
-  review           Review[]
+  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
+  title               String
+  taskType            TaskType           @default(PAYMENT)
+  location            String?
+  max_salary          Float?
+  min_salary          Float?
+  require_skills      String[]
+  provide_attachments String[]
+  description         String?
+  deadline            DateTime?
+  tags                String[]
+  files               String[]
+  isActive            Boolean            @default(true)
+  status              TaskStatus         @default(IN_PROGRESS)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  traderId            String?            @db.ObjectId
+  trader              Trader?            @relation(fields: [traderId], references: [id])
+  categoryid          String             @db.ObjectId
+  category            Category           @relation(fields: [categoryid], references: [id])
+  subCategoryid       String?            @db.ObjectId
+  subCategory         SubCategory?       @relation(fields: [subCategoryid], references: [id])
+  favourites          Favourite[]
+  bosting_tasks       Bosting_task[]
+  task_Application    Task_Application[]
+  review              Review[]
 
   @@map("tasks")
 }
@@ -179,19 +179,18 @@ model Task {
 enum AplicationStatus {
   IN_PROGRESS
   REJECTED
-  CANCELED
   APPROVED
 }
 
 model Task_Application {
-  id             String           @id @default(auto()) @map("_id") @db.ObjectId
-  status         AplicationStatus @default(IN_PROGRESS)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  offerId        String           @db.ObjectId
-  offerByTrader  Trader           @relation(fields: [offerId], references: [id])
-  taskId         String           @db.ObjectId
-  task           Task             @relation(fields: [taskId], references: [id])
+  id            String           @id @default(auto()) @map("_id") @db.ObjectId
+  status        AplicationStatus @default(IN_PROGRESS)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  offerId       String           @db.ObjectId
+  offerByTrader Trader           @relation(fields: [offerId], references: [id])
+  taskId        String           @db.ObjectId
+  task          Task             @relation(fields: [taskId], references: [id])
 
   @@map("task_applications")
 }
@@ -203,12 +202,13 @@ enum FavouriteType {
 
 model Favourite {
   id                 String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId             String        @db.ObjectId
   type               FavouriteType @default(TASK)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  traderOwnerId      String        @db.ObjectId
+  traderOwner        Trader        @relation("traderOwner", fields: [traderOwnerId], references: [id])
   favoriteByTraderId String?       @db.ObjectId
-  favouriteByTrader  Trader?       @relation(fields: [favoriteByTraderId], references: [id])
+  favoriteByTrader   Trader?       @relation("favoriteByTrader", fields: [favoriteByTraderId], references: [id])
   taskId             String?       @db.ObjectId
   task               Task?         @relation(fields: [taskId], references: [id])
 
@@ -216,28 +216,36 @@ model Favourite {
 }
 
 model Review {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  taskId    String   @db.ObjectId
-  traderid  String   @db.ObjectId
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  task      Task     @relation(fields: [taskId], references: [id])
-  trader    Trader   @relation(fields: [traderid], references: [id])
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  taskId           String   @db.ObjectId
+  rating           Int
+  comment          String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  task             Task     @relation(fields: [taskId], references: [id])
+  reviewReceiverId String?  @db.ObjectId
+  reviewReceiver   Trader?  @relation("reviewReceiver", fields: [reviewReceiverId], references: [id])
+  reviewProviderId String? @db.ObjectId 
+  reviewProvider   Trader? @relation("reviewProvider", fields: [reviewProviderId], references: [id])
 
   @@map("reviews")
 }
 
+enum Bosting_Status {
+  ACTIVE
+  INACTIVE
+  CANCELED
+}
+
 model Bosting_task {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  taskId    String     @db.ObjectId
-  traderId  String     @db.ObjectId
-  status    TaskStatus @default(PENDING)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  task      Task       @relation(fields: [taskId], references: [id])
-  trader    Trader     @relation(fields: [traderId], references: [id])
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  taskId    String         @db.ObjectId
+  traderId  String         @db.ObjectId
+  status    Bosting_Status @default(ACTIVE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  task      Task           @relation(fields: [taskId], references: [id])
+  trader    Trader         @relation(fields: [traderId], references: [id])
   payment   Payment[]
 
   @@map("bosting_tasks")
@@ -261,26 +269,26 @@ model Subscription {
 }
 
 model SubscriptionPlan {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  plan          SubscribePlan  @default(PRO_PLAN)   @unique
-  name          String
-  description   String
-  featuresList  String[]
-  trialPeriod   Boolean        @default(false)
-  price         Float          @default(0)
-  stripeProductId String?      
-  stripePriceId String?         @default("")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  subscription  Subscription[]
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  plan            SubscribePlan  @unique @default(PRO_PLAN)
+  name            String
+  description     String
+  featuresList    String[]
+  trialPeriod     Boolean        @default(false)
+  price           Float          @default(0)
+  stripeProductId String?
+  stripePriceId   String?        @default("")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  subscription    Subscription[]
 
   @@map("subscription_plans")
 }
 
 enum PaymentType {
-     SUBSCRIPTION
-     BOOTS_PAYMENT
-     TASK_PAYMENT
+  SUBSCRIPTION
+  BOOTS_PAYMENT
+  TASK_PAYMENT
 }
 
 model Payment {

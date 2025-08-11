@@ -3,8 +3,6 @@ import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 
 // Reusable Stripe Singleton
-
-
 export class StripeSingleton {
   private static instance: Stripe;
 

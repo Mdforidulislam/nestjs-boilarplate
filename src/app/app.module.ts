@@ -31,6 +31,7 @@ import { TaskCategoryModule } from '@/modules/task_category/task_category.module
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TaskApplicationModule } from '@/modules/task_application/task_application.module';
+import { FavoriteSaveModule } from '@/modules/favorite_save/favorite_save.module';
 
 
 @Module({
@@ -77,7 +78,8 @@ import { TaskApplicationModule } from '@/modules/task_application/task_applicati
     SubscriptionPlanModule,
     VerificationModule,
     TaskCategoryModule,
-    TaskApplicationModule
+    TaskApplicationModule,
+    FavoriteSaveModule
   ],
   controllers: [AppController],
   providers: [

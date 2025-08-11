@@ -1,34 +1,70 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Query, Req } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ResponseService } from '@/utils/response';
+import QueryBuilder from '@/utils/queryBuilder';
 
 @Controller('review')
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Post()
-  create(@Body() createReviewDto: CreateReviewDto) {
-    return this.reviewService.create(createReviewDto);
+ async create(@Body() createReviewDto: CreateReviewDto) {
+    const result = await this.reviewService.create(createReviewDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Review Created Successfully',
+      data: result
+    })
   }
 
   @Get()
-  findAll() {
-    return this.reviewService.findAll();
+ async findAll(
+   @Query() query: Record<string, any>,
+   @Req() req: any
+ ) {
+    const user = req.user;
+    const result = await this.reviewService.findAll(query, user);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Review Found Successfully',
+      data: result
+    });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.reviewService.findOne(+id);
+ async findOne(@Param('id') id: string) {
+    const result = await this.reviewService.findOne(id);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Review Found Successfully',
+      data: result
+    });
+
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
-    return this.reviewService.update(+id, updateReviewDto);
+ async update(@Param('id') id: string, @Body() updateReviewDto: UpdateReviewDto) {
+    const result = await this.reviewService.update(id, updateReviewDto);
+
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Review Updated Successfully',
+      data: result
+    });
+
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.reviewService.remove(+id);
+ async remove(@Param('id') id: string) {
+    const result = await this.reviewService.remove(id);
+
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Review Deleted Successfully',
+      data: result
+    });
+
   }
 }

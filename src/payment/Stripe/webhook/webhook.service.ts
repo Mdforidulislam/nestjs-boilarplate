@@ -17,13 +17,9 @@ export class WebhookService {
   }
 
   async handleEvent(event: Stripe.Event) {
-          console.log(event.type,'checking event type');
     switch (event.type) {
-
-
       case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-
+      const session = event.data.object as Stripe.Checkout.Session;
           // You can fetch subscription or customer from here
         const subscriptionId = session?.subscription as string;
         const customerId = session?.customer as string;
@@ -170,7 +166,7 @@ export class WebhookService {
         break;
       }
       default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+        console.log(`Unhandled event type: ${event.type}`);
     }
   }
 }
