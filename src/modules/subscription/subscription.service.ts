@@ -58,7 +58,7 @@ export class SubscriptionService {
         metadata: {
           subscriptionPlanId: findingSubscripitonPlan.id,
           ownerId: findUser.id,
-          paymentType : "SUBSCRIPTION"
+          paymentType : "TRADER_SUBSCRIPTION_CREATED"
 
         }
       });

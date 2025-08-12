@@ -4,7 +4,7 @@ import { UpdateTaskApplicationDto } from './dto/update-task_application.dto';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
 import QueryBuilder from '@/utils/queryBuilder';
-import { Role, TaskStatus } from '@prisma/client';
+import { AplicationStatus, Role, TaskStatus } from '@prisma/client';
 import { MarketplacePaymentService } from '@/payment/Stripe/marketplace.payment';
 
 @Injectable()
@@ -124,9 +124,20 @@ async RequestAll (
 
   if(!id) return "Task Application not found";
 
-  const result = await this.prisma.task.findFirst({
+  const findingTaskApplication = await this.prisma.task_Application.findFirst({
     where: {
       id
+    },
+    include: {
+      task: true
+    }
+  });
+  
+  if(!findingTaskApplication) return "Task Application not found";
+
+  const result = await this.prisma.task.findFirst({
+    where: {
+      id: findingTaskApplication?.taskId
     },
     include: {
       task_Application: {
@@ -141,7 +152,6 @@ async RequestAll (
     }
   });
   return result
-  
 }
 
  async findOneRequest(id: string) {
@@ -162,36 +172,77 @@ async RequestAll (
 
 
 async updateOffer(id: string, updateTaskApplicationDto: UpdateTaskApplicationDto) {
-
   if(!id) return "Task Application not found";
-
-  const finding = await this.prisma.task.findFirst({
+  
+  const findingTaskApplication = await this.prisma.task_Application.findFirst({
     where: {
       id
     },
+    include: {
+      task: true
+    }
   });
 
-  if(!finding) return "Task Application not found";
+  const isExtingTrader = await this.prisma.trader.findFirst({
+    where: {
+      id: updateTaskApplicationDto.offerId
+    }
+  });
 
-  const reponse = await this.marketplaceService.createPaymentWithSession(
-     finding.id,
-     updateTaskApplicationDto.offerId, 
-     updateTaskApplicationDto.amount
-  );
-  return reponse
+  if(!isExtingTrader) return "Trader not found";
+
+  if(findingTaskApplication.status === AplicationStatus.IN_PROGRESS){
+        if(!findingTaskApplication) return "Task Application not found";
+        if(findingTaskApplication.task.status !== TaskStatus.IN_PROGRESS) return "Task is status not in progress";
+        const reponse = await this.marketplaceService.createPaymentWithSession({
+          taskId: findingTaskApplication.taskId,
+          buyerId: findingTaskApplication.offerId, 
+          task_applicationId: findingTaskApplication.id,
+          amount: findingTaskApplication.task.max_salary ?? findingTaskApplication.task.min_salary,
+          paymentType: "OnTimePayment_TaskApplication_Offer"
+        });
+
+      return reponse
+  }else {
+
+    if(!findingTaskApplication) return "Task Application not found";
+    if(findingTaskApplication.status !== AplicationStatus.APPROVED) return "Application Status is not Approved";
+    if(findingTaskApplication.task.status !== TaskStatus.ORDER_ACTIVE) return "Task is not order active";
+
+    console.log('excution here');
+
+    console.log(isExtingTrader,'checking is user here !!');
+
+    const response = await this.marketplaceService.transferMoney({
+     traderAccountId:  isExtingTrader.stripeAccountId,
+     taskId: findingTaskApplication.task.id,
+     amount: findingTaskApplication.task.max_salary || 100 ,
+     paymentType: "OnTimePayment_TaskApplication_Offer_paymentTransfer"
+    })
+
+    //  return response
+
+    return "success"
+  }
+
 }
 
 async  updateRequest(id: string, updateTaskApplicationDto: UpdateTaskApplicationDto) {
 
-  if(!id) return "Task Application not found";
+if(!id) return "Task Application not found";
 
-  const finding = await this.prisma.task_Application.findFirst({
+const finding = await this.prisma.task_Application.findFirst({
     where: {
       id
     },
-  });
+    include:{
+      task: true
+    }
+});
 
-  if(!finding) return "Task Application not found";
+if(!finding) return "Task Application not found";
+if(finding.status !== AplicationStatus.APPROVED) return "Application Status is not Approved";
+if(finding.task.status !== TaskStatus.ORDER_ACTIVE) return "Task is not order active";
 
 return await this.prisma.task.update({
     where:{

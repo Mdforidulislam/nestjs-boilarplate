@@ -4,9 +4,10 @@ import { VerificationController } from './verification.controller';
 import { StripeService } from '@/payment/Stripe/intent.payment';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
+import { MarketplacePaymentService } from '@/payment/Stripe/marketplace.payment';
 
 @Module({
   controllers: [VerificationController],
-  providers: [VerificationService, PrismaService, PrismaHelperService]
+  providers: [VerificationService, PrismaService, PrismaHelperService, MarketplacePaymentService]
 })
 export class VerificationModule {}

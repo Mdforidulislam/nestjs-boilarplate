@@ -191,7 +191,7 @@ export class WebsocketGateway
     const participants = await this.prisma.roomUser.findMany({
       where: { roomId },
       select: { userId: true },
-    });
+    }); 
 
     participants.forEach(({ userId: participantId }) => {
       const participantSocket = this.userSockets.get(participantId);

@@ -4,12 +4,14 @@ import { UpdateVerificationDto } from './dto/update-verification.dto';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
 import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
+import { MarketplacePaymentService } from '@/payment/Stripe/marketplace.payment';
 
 @Injectable()
 export class VerificationService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly prismaHelper: PrismaHelperService
+    private readonly prismaHelper: PrismaHelperService,
+    private readonly marketplaceService: MarketplacePaymentService
   ) {}
 
   async create(createVerificationDto: CreateVerificationDto) {
@@ -41,6 +43,10 @@ export class VerificationService {
         where: { id: user.id },
         data: { stripeAccountId: account.id },
       });
+
+       const accountTransferActive = await this.marketplaceService.accountTransferActive({
+       traderAccountId: account.id,
+   })
 
       const accountLink = await stripe.accountLinks.create({
         account: account.id,

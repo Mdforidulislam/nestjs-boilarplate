@@ -17,7 +17,6 @@ model User {
   email            String             @unique
   description      String?
   contactNo        String             @unique
-  stripeAccountId  String?
   password         String
   lang             Lang               @default(ENG)
   role             Role               @default(TRADER)
@@ -172,6 +171,7 @@ model Task {
   bosting_tasks       Bosting_task[]
   task_Application    Task_Application[]
   review              Review[]
+  payment             Payment[]
 
   @@map("tasks")
 }
@@ -293,21 +293,21 @@ enum PaymentType {
 
 model Payment {
   id                 String        @id @default(auto()) @map("_id") @db.ObjectId
-  customerId         String?
-  brokerFirmId       String?
   paymentType        PaymentType   @default(TASK_PAYMENT)
   amount             Float
   currency           String
-  paymentDate        DateTime
   paymentStatus      PaymentStatus
   subscriptionId     String?       @db.ObjectId
   traderId           String?       @db.ObjectId
+  taskId             String?       @db.ObjectId
   subscriptionPlanId String?
+  stripePaymentId    String?
   bostingId          String?       @db.ObjectId
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   subscription       Subscription? @relation(fields: [subscriptionId], references: [id])
   trader             Trader?       @relation(fields: [traderId], references: [id])
+  task               Task?         @relation(fields: [taskId], references: [id])
   bosting            Bosting_task? @relation(fields: [bostingId], references: [id])
 
   @@map("payments")
@@ -433,4 +433,5 @@ enum PaymentStatus {
   REFUNDED
   PARTIALLY_REFUNDED
   FAILED
+  ON_HOLD
 }

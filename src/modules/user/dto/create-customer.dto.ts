@@ -58,7 +58,11 @@ export class CustomerDto {
 export class CreateCustomerDto {
   @ValidateNested()
   @Type(() => CustomerDto)
-  customer: CustomerDto;
+  trader: CustomerDto;
+
+  @IsOptional()
+  @IsString()
+  stripeAccountId?: string;
 
   @IsEmail()
   email: string;

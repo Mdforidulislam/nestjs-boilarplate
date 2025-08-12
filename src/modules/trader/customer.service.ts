@@ -67,7 +67,7 @@ export class CustomerService {
   }
 
   async update(id: string, data: UpdateCustomerDto, avatar: string) {
-    const { customer, ...user } = data;
+    const { trader, ...user } = data;
 
     const isUserExists = await this.findOne(id);
 
@@ -101,14 +101,14 @@ export class CustomerService {
 
         const CustomerUpdation = await this.prisma.trader.update({
           where: { id: isUserExists?.trader?.id },
-          data: { ...(customer as any) },
+          data: { ...(trader as any) },
         });
 
         if (!CustomerUpdation) {
           throw new ApiError(HttpStatus.NOT_FOUND, `Customer updation failed`);
         }
 
-        console.log(`see customer`, customer);
+        console.log(`see customer`, trader);
 
         const userUpdation = await this.prisma.user.update({
           where: { id: isUserExists?.id },

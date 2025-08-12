@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/helper/prisma.service';
+import { PaymentType } from '@prisma/client';
 
 @Injectable()
 export class WebhookService {
@@ -16,51 +17,111 @@ export class WebhookService {
     });
   }
 
-  async handleEvent(event: Stripe.Event) {
+  async handleEvent(event: Stripe.Event ) {
+    console.log(
+      `💰 Webhook received: ${event.type}`,
+    );
     switch (event.type) {
+      
       case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
-          // You can fetch subscription or customer from here
+      const metadata = session?.metadata as any;
+      const stripePaymentId = session?.payment_intent as string;
+
+        //  one time payment handle here
+        if(!session?.subscription){
+          if(session?.payment_status === 'paid'){
+            //  You can fetch subscription or customer from here
+              if(metadata?.paymentType === "OnTimePayment_TaskApplication_Offer"){
+                if(metadata?.task_applicationId){
+
+                  await this.prisma.$transaction(async (tx) => {
+                   // update task application
+                  await tx.task_Application.update({
+                    where: { id: metadata.task_applicationId },
+                    data: { 
+                      status:"APPROVED"
+                     },
+                   });
+
+                   // update task
+                   await tx.task.update({
+                    where: { id: metadata.taskId },
+                    data: { 
+                      status:"ORDER_ACTIVE"
+                     },
+                   });
+
+                   // create payment for task
+                   await tx.payment.create({
+                    data: {
+                      paymentType: PaymentType.TASK_PAYMENT,
+                      amount: session.amount_subtotal,
+                      taskId: metadata.taskId,
+                      currency: session.currency,
+                      stripePaymentId: stripePaymentId,
+                      paymentStatus: "ON_HOLD",
+                    } as any,
+                   })
+                  })
+                } 
+              } // write others confition and logic
+
+            // others one time payment hanlde here 
+          }
+        } else if(session?.subscription){   //  subscription payment handle here
+        // You can fetch subscription or customer from here
         const subscriptionId = session?.subscription as string;
         const customerId = session?.customer as string;
         const expiuredAt = session?.expires_at as number;
-        const metadata = session?.metadata as any;
+            if (session?.payment_status === 'paid') {
 
-        await this.prisma.subscription.create({
-                data: {
-                  subscriptionPlanId: metadata.subscriptionPlanId,
-                  expiresAt: new Date(expiuredAt * 1000),
-                  ownerId: metadata?.ownerId,
-                  stripeSubscriptionId: subscriptionId ,
-                  stripeCustomerId: customerId,
-                  subscriptionStatus: 'ACTIVE',
-                  cancelRequest: false,
-                },
-         });
+                if(metadata?.paymentType === "TRADER_SUBSCRIPTION_CREATED"){
+                    await this.prisma.$transaction(async (tx) => {
+                         // create subscription
+                    await tx.subscription.create({
+                      data: {
+                          subscriptionPlanId: metadata.subscriptionPlanId,
+                          expiresAt: new Date(expiuredAt * 1000),
+                          ownerId: metadata?.ownerId,
+                          stripeSubscriptionId: subscriptionId ,
+                          stripeCustomerId: customerId,
+                          subscriptionStatus: 'ACTIVE',
+                          cancelRequest: false,
+                      },
+                    });
+
+                    //  create payment for subscription
+                    await tx.payment.create({
+                      data: {
+                        paymentType: PaymentType.SUBSCRIPTION,
+                        subscriptionPlanId: metadata.subscriptionPlanId,
+                        currency: session.currency,
+                        stripePaymentId: stripePaymentId,
+                        amount: ( session.amount_subtotal / 100) ,
+                        paymentStatus: "SUCCEEDED",
+                      }
+                    })
+                    })
+                 }
+            }
+        };
 
         break;
       }
 
+      case 'transfer.updated': {
+            const transfer = event.data.object as Stripe.Transfer;
+            console.log(transfer,'transfer updated');
+            console.log(`Transfer completed: ${transfer.id}, amount: ${transfer.amount}`);
+            
+            // Update your database to mark the transfer as complete, notify the user, etc.
+            break;
+        }
+
       case 'invoice.payment_succeeded': {
       const invoice = event.data.object as Stripe.Invoice;
-        try {
-  
-          const metadata = invoice.parent?.subscription_details?.metadata || {};
-              // Step 3: Build Payment data
-          await this.prisma.payment.create({
-                data: {
-                  customerId: metadata.ownerId, 
-                  amount: invoice.amount_paid / 100,
-                  currency: invoice.currency,
-                  paymentDate: new Date(invoice.created * 1000),
-                  paymentStatus: 'SUCCEEDED', 
-                  subscriptionPlanId: metadata?.subscriptionPlanId || null,
-                },
-              });
-
-        } catch (error) {
-          console.error('Error fetching subscription:', error);
-        }
+        console.log('Invoice Payment Succeeded:', invoice);
         break;
       }
 
