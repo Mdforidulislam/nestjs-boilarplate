@@ -73,6 +73,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   async handleAuthenticate(@ConnectedSocket() socket: Socket) {
     const token = socket.handshake.headers['authorization'];
     console.log('token', token);
+    console.log(socket,'socket checking');
     if (!token) {
       socket.disconnect(true);
       return;
@@ -82,8 +83,8 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       const user = await this.jwtService.verifyAsync(token);
       const userId = user.id;
       socket.data.userId = userId;
-      
       const userRooms = new Set<string>();
+
       this.onlineUsers.set(userId, {
         userId,
         socketId: socket.id,
@@ -99,6 +100,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       await this.autoJoinUserRooms(socket, userId, userRooms);
 
       this.broadcastUserStatus(userId, true);
+
       socket.emit('authenticated', { 
         userId, 
         message: 'Successfully authenticated',
@@ -122,6 +124,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     },
     @ConnectedSocket() socket: Socket,
   ) {
+
+    console.log('payload', payload);
+
     const userId = socket.data.userId as string;
     const { roomId, message, images = [], replyToId } = payload;
 
@@ -130,65 +135,65 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
       return;
     }
 
-    try {
-      // Verify user access
-      const roomUser = await this.prisma.roomUser.findFirst({
-        where: { roomId, userId },
-        include: { room: true }
-      });
+    // try {
+    //   // Verify user access
+    //   const roomUser = await this.prisma.roomUser.findFirst({
+    //     where: { roomId, userId },
+    //     include: { room: true }
+    //   });
 
-      if (!roomUser) {
-        socket.emit('error', { message: 'Access denied to room' });
-        return;
-      }
+    //   if (!roomUser) {
+    //     socket.emit('error', { message: 'Access denied to room' });
+    //     return;
+    //   }
 
-      // For SINGLE rooms, get receiver
-      let receiverId = userId; // Default to sender
-      if (roomUser.room.type === 'SINGLE') {
-        const otherMember = await this.prisma.roomUser.findFirst({
-          where: { roomId, userId: { not: userId } }
-        });
-        receiverId = otherMember?.userId || userId;
-      }
+    //   // For SINGLE rooms, get receiver
+    //   let receiverId = userId; // Default to sender
+    //   if (roomUser.room.type === 'SINGLE') {
+    //     const otherMember = await this.prisma.roomUser.findFirst({
+    //       where: { roomId, userId: { not: userId } }
+    //     });
+    //     receiverId = otherMember?.userId || userId;
+    //   }
 
-      // Create message in database
-      const chatMessage = await this.prisma.chat.create({
-        data: {
-          senderId: userId,
-          receiverId,
-          roomId,
-          message: message.trim(),
-          images: { set: images },
-          replyToId,
-          messageType: images.length > 0 ? 'FILE' : 'TEXT',
-        },
-        include: {
-          sender: { select: { id: true, username: true, avatar: true } },
-          reciver: { select: { id: true, username: true, avatar: true } },
-          file: true,
-        },
-      });
+    //   // Create message in database
+    //   const chatMessage = await this.prisma.chat.create({
+    //     data: {
+    //       senderId: userId,
+    //       receiverId,
+    //       roomId,
+    //       message: message.trim(),
+    //       images: { set: images },
+    //       replyToId,
+    //       messageType: images.length > 0 ? 'FILE' : 'TEXT',
+    //     },
+    //     include: {
+    //       sender: { select: { id: true, username: true, avatar: true } },
+    //       reciver: { select: { id: true, username: true, avatar: true } },
+    //       file: true,
+    //     },
+    //   });
 
-      // Stop typing indicator
-      this.handleStopTyping({ roomId }, socket);
+    //   // Stop typing indicator
+    //   this.handleStopTyping({ roomId }, socket);
 
-      // Broadcast message to room members
-      this.server.to(roomId).emit('newMessage', {
-        ...chatMessage,
-        timestamp: chatMessage.createdAt,
-      });
+    //   // Broadcast message to room members
+    //   this.server.to(roomId).emit('newMessage', {
+    //     ...chatMessage,
+    //     timestamp: chatMessage.createdAt,
+    //   });
 
-      // Update room's last activity
-      await this.prisma.room.update({
-        where: { id: roomId },
-        data: { updatedAt: new Date() },
-      });
+    //   // Update room's last activity
+    //   await this.prisma.room.update({
+    //     where: { id: roomId },
+    //     data: { updatedAt: new Date() },
+    //   });
 
-      console.log(`Message sent in room ${roomId} by user ${userId}`);
-    } catch (error) {
-      console.error('Send message error:', error);
-      socket.emit('error', { message: 'Failed to send message' });
-    }
+    //   console.log(`Message sent in room ${roomId} by user ${userId}`);
+    // } catch (error) {
+    //   console.error('Send message error:', error);
+    //   socket.emit('error', { message: 'Failed to send message' });
+    // }
   }
 
   @SubscribeMessage('typing')
@@ -616,6 +621,9 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
     @MessageBody() payload: { roomId: string; fileName: string; progress: number },
     @ConnectedSocket() socket: Socket,
   ) {
+
+
+
     const userId = socket.data.userId as string;
     const { roomId, fileName, progress } = payload;
 
@@ -695,6 +703,7 @@ export class WebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnG
   // Utility Methods
   private async autoJoinUserRooms(socket: Socket, userId: string, userRooms: Set<string>) {
     try {
+
       const roomUsers = await this.prisma.roomUser.findMany({
         where: { userId },
         select: { roomId: true },
