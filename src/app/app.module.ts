@@ -32,6 +32,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TaskApplicationModule } from '@/modules/task_application/task_application.module';
 import { FavoriteSaveModule } from '@/modules/favorite_save/favorite_save.module';
+import { StripeDashboardTraderModule } from '@/modules/stripe_dashboard_trader/stripe_dashboard_trader.module';
+import { BootsMangementModule } from '@/modules/boots_mangement/boots_mangement.module';
 
 
 @Module({
@@ -79,7 +81,9 @@ import { FavoriteSaveModule } from '@/modules/favorite_save/favorite_save.module
     VerificationModule,
     TaskCategoryModule,
     TaskApplicationModule,
-    FavoriteSaveModule
+    FavoriteSaveModule,
+    StripeDashboardTraderModule,
+    BootsMangementModule
   ],
   controllers: [AppController],
   providers: [

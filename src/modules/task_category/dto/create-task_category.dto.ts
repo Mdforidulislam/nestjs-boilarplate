@@ -21,6 +21,7 @@ export class CreateTaskCategoryDto {
   description?: string;
 
   @IsArray()
+  @IsOptional()
   @IsString({ each: true })
   @IsOptional()
   files?: string[];

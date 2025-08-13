@@ -21,32 +21,35 @@ export class VerificationService {
       where: {
         email: createVerificationDto.email,
       },
+      include: {
+        trader: true,
+      },
     });
 
     if (!user) throw new Error('User not found');
 
     // If no stripe account, create one
-    if (!user.stripeAccountId) {
+    if (!user.trader.stripeAccountId) {
+
       const account = await stripe.accounts.create({
         type: 'express',
         email: user.email,
-        country: createVerificationDto.country || "BD",
+        country: createVerificationDto.country,
         tos_acceptance:{
-            service_agreement: 'recipient'
+            service_agreement: ''
         },
         capabilities: {
           transfers: { requested: true },
+          card_payments: { requested: true },
         },
+        business_type: 'individual',
       });
 
-      await this.prisma.user.update({
+      await this.prisma.trader.update({
         where: { id: user.id },
         data: { stripeAccountId: account.id },
       });
 
-       const accountTransferActive = await this.marketplaceService.accountTransferActive({
-       traderAccountId: account.id,
-   })
 
       const accountLink = await stripe.accountLinks.create({
         account: account.id,
@@ -55,23 +58,27 @@ export class VerificationService {
         type: 'account_onboarding',
       });
 
-      return { onboardingUrl: accountLink.url };
+      return { onboardingUrl: accountLink.url , accountLink};
     }
 
     // If account exists, check status
-    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+    const account = await stripe.accounts.retrieve(user.trader.stripeAccountId);
+
+    console.log(account, 'account');
 
     if (account.details_submitted && account.charges_enabled) {
       return { status: 'verified', canPayout: true };
     } else {
+      const account = await stripe.accounts.retrieve("acct_1RtHCvKGhhHMR5Eo");
+      console.log(account, 'account');
       const accountLink = await stripe.accountLinks.create({
-        account: user.stripeAccountId,
+        account: user.trader.stripeAccountId,
         refresh_url: `${process.env.CLIENT_URL}/stripe/refresh`,
         return_url: `${process.env.CLIENT_URL}/stripe/return`,
         type: 'account_onboarding',
       });
 
-      return { onboardingUrl: accountLink.url };
+      return { onboardingUrl: accountLink.url , accountLink};
     }
   }
 

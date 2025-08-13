@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UploadedFiles, UploadedFile, Req, ValidationPipe, UseInterceptors, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UploadedFiles, Req, ValidationPipe, UseInterceptors, Query } from '@nestjs/common';
 import { TaskCategoryService } from './task_category.service';
 import { CreateTaskCategoryDto } from './dto/create-task_category.dto';
 import { UpdateTaskCategoryDto } from './dto/update-task_category.dto';
@@ -33,7 +33,7 @@ export class TaskCategoryController {
    
     let fileUrls: string[] = [];
     if (files?.files) {
-      fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+      fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
     }
 
     let icon: string | null = null;
@@ -71,11 +71,9 @@ export class TaskCategoryController {
     @Req() req
   ) {
      
-      console.log(createCategory, 'Create Category');
-      console.log(files, 'files');
       let uploadedFiles: string[] = [];
       if (files?.files) {
-        uploadedFiles = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+        uploadedFiles = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
       }
 
       let icon: string | null = null;
@@ -169,9 +167,9 @@ async findAllSubCategory(
   
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    updateTaskCategoryDto.files = fileUrls
   }
-  updateTaskCategoryDto.files = fileUrls
 
 
   const icon = updateTaskCategoryDto.icon
@@ -205,10 +203,9 @@ async findAllSubCategory(
   
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    updateTaskCategoryDto.files = fileUrls
   }
-  updateTaskCategoryDto.files = fileUrls
-
 
   const icon = updateTaskCategoryDto.icon
   if (icon) {

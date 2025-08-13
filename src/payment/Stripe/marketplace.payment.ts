@@ -94,18 +94,12 @@ return {
     }
   }
 
-
-  async accountTransferActive ({traderAccountId}: {traderAccountId:   string}) {
-    try {
-      const account = await this.stripe.accounts.update(traderAccountId, {
-        capabilities: {
-          transfers: { requested: true },
-        },
-      })
-      return account
-    } catch (error) {
-      throw new Error(`Failed to check account transfer: ${error.message}`);
+  async stripeExpressConnectDashboard (traderAccountId: string) {
+     try{
+      const loginLink = await this.stripe.accounts.createLoginLink(traderAccountId);
+      return loginLink.url;
+    }catch (error) {
+      throw new Error(`Failed to create account link: ${error.message}`);
     }
   }
-
 }

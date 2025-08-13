@@ -209,20 +209,15 @@ async updateOffer(id: string, updateTaskApplicationDto: UpdateTaskApplicationDto
     if(findingTaskApplication.status !== AplicationStatus.APPROVED) return "Application Status is not Approved";
     if(findingTaskApplication.task.status !== TaskStatus.ORDER_ACTIVE) return "Task is not order active";
 
-    console.log('excution here');
-
-    console.log(isExtingTrader,'checking is user here !!');
-
     const response = await this.marketplaceService.transferMoney({
      traderAccountId:  isExtingTrader.stripeAccountId,
      taskId: findingTaskApplication.task.id,
      amount: findingTaskApplication.task.max_salary || 100 ,
      paymentType: "OnTimePayment_TaskApplication_Offer_paymentTransfer"
     })
-
     //  return response
 
-    return "success"
+    return response
   }
 
 }

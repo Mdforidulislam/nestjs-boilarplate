@@ -8,7 +8,6 @@ Table users {
   email String [unique, not null]
   description String
   contactNo String [unique, not null]
-  stripeAccountId String
   password String [not null]
   lang Lang [not null, default: 'ENG']
   role Role [not null, default: 'TRADER']
@@ -21,10 +20,11 @@ Table users {
   verifications user_verifications [not null]
   sentMessages chats [not null]
   receivedMessages chats [not null]
-  roomUsers rooms [not null]
+  uploadedFile uploaded_files [not null]
   roomUser room_users [not null]
-  messageRead MessageRead [not null]
+  messageRead message_reads [not null]
   notification notifications [not null]
+  createdRooms rooms [not null]
 }
 
 Table user_verifications {
@@ -77,8 +77,21 @@ Table traders {
   Bosting_task bosting_tasks [not null]
   reviewProvider reviews [not null]
   reviewReceiver reviews [not null]
+  refferingByTrader TraderRefferIng [not null]
+  refferingTraderList TraderRefferIng [not null]
   payment payments [not null]
   subscription subscriptions [not null]
+}
+
+Table TraderRefferIng {
+  id String [pk]
+  traderId String [not null]
+  trader traders [not null]
+  referringCount Float [not null, default: 0]
+  refferingId String
+  refferingTraderList traders
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
 }
 
 Table categories {
@@ -250,23 +263,24 @@ Table notifications {
 
 Table rooms {
   id String [pk]
-  roomName String
+  name String [not null]
   description String
-  img String
   type RoomType [not null, default: 'GROUP']
-  isPrivate Boolean [not null, default: false]
-  createdByUserId String [not null]
-  createdBy users [not null]
+  img String
+  createdBy String [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
-  participants room_users [not null]
-  chats chats [not null]
+  creator users [not null]
+  roomUsers room_users [not null]
+  chat chats [not null]
+  uploadedFiles uploaded_files [not null]
 }
 
 Table room_users {
   id String [pk]
   roomId String [not null]
   userId String [not null]
+  role MemberType [not null, default: 'MEMEBER']
   joinedAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   room rooms [not null]
@@ -279,27 +293,53 @@ Table room_users {
 
 Table chats {
   id String [pk]
-  senderId String [not null]
-  receiverId String [not null]
-  roomId String [not null]
   message String [not null]
+  messageType MessageType [not null, default: 'TEXT']
   images String[] [not null]
+  fileId String
+  replyToId String
   isRead Boolean [not null, default: false]
+  isEdited Boolean [not null, default: false]
+  isDeleted Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
+  senderId String [not null]
+  roomId String [not null]
+  receiverId String [not null]
   sender users [not null]
-  receiver users
+  reciver users [not null]
   room rooms [not null]
-  messageRead MessageRead [not null]
+  file uploaded_files
+  messageRead message_reads [not null]
 }
 
-Table MessageRead {
+Table message_reads {
   id String [pk]
   messageId String [not null]
   userId String [not null]
-  readAt DateTime [not null]
+  readAt DateTime [default: `now()`, not null]
   message chats [not null]
   user users [not null]
+
+  indexes {
+    (messageId, userId) [unique]
+  }
+}
+
+Table uploaded_files {
+  id String [pk]
+  originalName String
+  filename String
+  path String
+  size Int
+  mimeType String
+  fileType FileType [not null, default: 'FILE']
+  uploadedBy String [not null]
+  roomId String [not null]
+  createdAt DateTime [default: `now()`, not null]
+  uploader users [not null]
+  room rooms [not null]
+  chat chats [not null]
 }
 
 Enum VerificationStatus {
@@ -349,6 +389,24 @@ Enum RoomType {
   GROUP
   PRIVATE
   BROADCAST
+}
+
+Enum MemberType {
+  ADMIN
+  MEMEBER
+  MODARETOR
+}
+
+Enum MessageType {
+  TEXT
+  FILE
+}
+
+Enum FileType {
+  VIDEO
+  AUDIO
+  IMAGE
+  FILE
 }
 
 Enum Role {
@@ -401,6 +459,10 @@ Ref: Admin.userId - users.id
 
 Ref: traders.userId - users.id
 
+Ref: TraderRefferIng.traderId > traders.id
+
+Ref: TraderRefferIng.refferingId > traders.id
+
 Ref: sub_categories.categoryId > categories.id
 
 Ref: tasks.traderId > traders.id
@@ -443,7 +505,7 @@ Ref: payments.bostingId > bosting_tasks.id
 
 Ref: notifications.userId > users.id
 
-Ref: rooms.createdByUserId > users.id
+Ref: rooms.createdBy > users.id
 
 Ref: room_users.roomId > rooms.id
 
@@ -455,6 +517,12 @@ Ref: chats.receiverId > users.id
 
 Ref: chats.roomId > rooms.id
 
-Ref: MessageRead.messageId > chats.id
+Ref: chats.fileId > uploaded_files.id
 
-Ref: MessageRead.userId > users.id
+Ref: message_reads.messageId > chats.id
+
+Ref: message_reads.userId > users.id
+
+Ref: uploaded_files.uploadedBy > users.id
+
+Ref: uploaded_files.roomId > rooms.id

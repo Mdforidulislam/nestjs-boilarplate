@@ -28,14 +28,18 @@ model User {
   trader           Trader?
   verifications    UserVerification[]
   sentMessages     Chat[]             @relation("UserSentMessages")
-  receivedMessages Chat[]             @relation("UserReceivedMessages")
-  roomUsers        Room[]             @relation("CreatorByRoomOwner")
+  receivedMessages Chat[]             @relation("UserReciveMessage")
+  uploadedFile     UploadedFile[]
   roomUser         RoomUser[]
   messageRead      MessageRead[]
   notification     Notification[]
+  createdRooms     Room[]  
 
   @@map("users")
 }
+
+
+
 
 enum VerificationStatus {
   PENDING
@@ -70,36 +74,49 @@ model Admin {
 }
 
 model Trader {
-  id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String             @unique @db.ObjectId
-  user             User               @relation(fields: [userId], references: [id])
-  isActive         Boolean            @default(true)
-  stripeAccountId  String?
-  fastName         String?
-  lastName         String?
-  skills           String[]
-  mininumHoulyRate Float?
-  nationality      String?
-  tagline          String[]
-  description      String?
-  attachments      String[]
-  resumeFile       String?
-  socialMediaLink  String[]
-  isVerified       Boolean            @default(false)
-  isDeleted        Boolean            @default(false)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  offerByTrader    Task_Application[]
-  traderOwner      Favourite[]        @relation("traderOwner")
-  favoriteByTrader Favourite[]        @relation("favoriteByTrader")
-  tasks            Task[]
-  Bosting_task     Bosting_task[]
-  reviewProvider   Review[]           @relation("reviewProvider")
-  reviewReceiver   Review[]           @relation("reviewReceiver")
-  payment      Payment[]
-  subscription Subscription[]
+  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId              String             @unique @db.ObjectId
+  user                User               @relation(fields: [userId], references: [id])
+  isActive            Boolean            @default(true)
+  stripeAccountId     String?
+  fastName            String?
+  lastName            String?
+  skills              String[]
+  mininumHoulyRate    Float?
+  nationality         String?
+  tagline             String[]
+  description         String?
+  attachments         String[]
+  resumeFile          String?
+  socialMediaLink     String[]
+  isVerified          Boolean            @default(false)
+  isDeleted           Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  offerByTrader       Task_Application[]
+  traderOwner         Favourite[]        @relation("traderOwner")
+  favoriteByTrader    Favourite[]        @relation("favoriteByTrader")
+  tasks               Task[]
+  Bosting_task        Bosting_task[]
+  reviewProvider      Review[]           @relation("reviewProvider")
+  reviewReceiver      Review[]           @relation("reviewReceiver")
+  refferingByTrader   TraderRefferIng[]  @relation("RefferingByTrader")
+  refferingTraderList TraderRefferIng[]  @relation("RefferingTraderList")
+  payment             Payment[]
+  subscription        Subscription[]
 
   @@map("traders")
+}
+
+model TraderRefferIng {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  traderId            String   @db.ObjectId
+  trader              Trader  @relation("RefferingByTrader", fields: [traderId], references: [id])
+  referringCount      Float    @default(0)
+  refferingId         String?   @db.ObjectId
+  refferingTraderList Trader?   @relation("RefferingTraderList", fields: [refferingId], references: [id])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model Category {
@@ -225,8 +242,8 @@ model Review {
   task             Task     @relation(fields: [taskId], references: [id])
   reviewReceiverId String?  @db.ObjectId
   reviewReceiver   Trader?  @relation("reviewReceiver", fields: [reviewReceiverId], references: [id])
-  reviewProviderId String? @db.ObjectId 
-  reviewProvider   Trader? @relation("reviewProvider", fields: [reviewProviderId], references: [id])
+  reviewProviderId String?  @db.ObjectId
+  reviewProvider   Trader?  @relation("reviewProvider", fields: [reviewProviderId], references: [id])
 
   @@map("reviews")
 }
@@ -335,49 +352,68 @@ enum RoomType {
 }
 
 model Room {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
-  roomName        String?
-  description     String?
-  img             String?
-  type            RoomType   @default(GROUP)
-  isPrivate       Boolean    @default(false)
-  createdByUserId String     @db.ObjectId
-  createdBy       User       @relation("CreatorByRoomOwner", fields: [createdByUserId], references: [id])
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  participants    RoomUser[]
-  chats           Chat[]
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  type        RoomType @default(GROUP)  
+  img         String?
+  createdBy   String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  creator     User       @relation(fields: [createdBy], references: [id])
+  roomUsers   RoomUser[]
+  chat        Chat[]
+  uploadedFiles UploadedFile[]
 
   @@map("rooms")
+}
+
+enum MemberType {
+    ADMIN
+    MEMEBER
+    MODARETOR    
 }
 
 model RoomUser {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   roomId    String   @db.ObjectId
   userId    String   @db.ObjectId
+  role      MemberType   @default(MEMEBER) 
   joinedAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
   room      Room     @relation(fields: [roomId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
-
   @@unique([roomId, userId])
   @@map("room_users")
 }
 
-model Chat {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  senderId   String   @db.ObjectId
-  receiverId String   @db.ObjectId
-  roomId     String   @db.ObjectId
-  message    String
-  images     String[]
-  isRead     Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  sender     User     @relation("UserSentMessages", fields: [senderId], references: [id])
-  receiver   User?    @relation("UserReceivedMessages", fields: [receiverId], references: [id])
-  room       Room     @relation(fields: [roomId], references: [id])
+enum MessageType {
+  TEXT
+  FILE
+}
 
+model Chat {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  message     String
+  messageType MessageType   @default(TEXT) 
+  images      String[]
+  fileId      String?  @db.ObjectId
+  replyToId   String?  @db.ObjectId
+  isRead      Boolean  @default(false)
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  senderId    String   @db.ObjectId
+  roomId      String   @db.ObjectId
+  receiverId  String    @db.ObjectId
+  sender      User           @relation("UserSentMessages", fields: [senderId], references: [id])
+  reciver     User           @relation("UserReciveMessage", fields: [receiverId], references: [id])
+  room        Room           @relation(fields: [roomId], references: [id])
+  file        UploadedFile?  @relation(fields: [fileId], references: [id])
   messageRead MessageRead[]
 
   @@map("chats")
@@ -387,10 +423,42 @@ model MessageRead {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   messageId String   @db.ObjectId
   userId    String   @db.ObjectId
-  readAt    DateTime
+  readAt    DateTime @default(now())
+  
   message   Chat     @relation(fields: [messageId], references: [id])
   user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@map("message_reads")
 }
+
+enum FileType {
+   VIDEO
+   AUDIO
+   IMAGE
+   FILE
+}
+
+model UploadedFile {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  originalName String?
+  filename     String?
+  path         String?
+  size         Int?
+  mimeType     String?
+  fileType     FileType    @default(FILE)
+  uploadedBy   String   @db.ObjectId
+  roomId       String   @db.ObjectId
+  createdAt    DateTime @default(now())
+  
+  uploader     User     @relation(fields: [uploadedBy], references: [id])
+  room         Room     @relation(fields: [roomId], references: [id])
+  chat         Chat[]
+
+
+  @@map("uploaded_files")
+}
+
 
 enum Role {
   SUPER_ADMIN

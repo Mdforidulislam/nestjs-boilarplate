@@ -78,7 +78,9 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
       .nestedFilter([])
       .sort()
       .paginate()
-      .include({})
+      .include({
+        trader: true,
+      })
       .fields()
       .filterByRange([])
       .execute();

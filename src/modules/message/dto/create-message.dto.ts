@@ -1,24 +1,35 @@
-// create-message.dto.ts
-import { IsString, IsArray, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { MemberType, RoomType } from '@prisma/client';
 
-export class CreateMessageDto {
+export class CreateRoomDto {
+  @ApiProperty()
   @IsString()
-  roomId: string;
+  name: string;
 
-  @IsString()
-  senderId: string;
-
-  @IsString()
-  receiverId: string;
-
-  @IsString()
-  message: string;
-
-  @IsArray()
+  @ApiProperty({ required: false })
   @IsOptional()
-  images?: string[];
+  @IsString()
+  description?: string;
 
-  @IsBoolean()
+  @ApiProperty({ enum: RoomType, default: RoomType.GROUP })
   @IsOptional()
-  isRead?: boolean;
+  @IsEnum(RoomType)
+  type?: RoomType;
+}
+
+
+export class AddUserToRoomDto {
+  @ApiProperty()
+  @IsString()
+  userId: string;
+
+  @ApiProperty()
+  @IsString()
+  addedBy: string;
+
+  @ApiProperty({ enum: MemberType, default: MemberType.MEMEBER})
+  @IsOptional()
+  @IsEnum(MemberType)
+  role?: MemberType;
 }

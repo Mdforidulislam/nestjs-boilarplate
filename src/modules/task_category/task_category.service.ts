@@ -63,7 +63,9 @@ async findAllCategory(query: Record<string, any>) {
       .nestedFilter([])
       .sort()
       .paginate()
-      .include({})
+      .include({
+        SubCategory: true
+      })
       .fields()
       .filterByRange([])
       .execute();
