@@ -1,104 +1,47 @@
-import { Controller, Get, Post, Delete, Param, Body, Query, Request, UseInterceptors, UploadedFile, HttpStatus, UploadedFiles } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { ApiTags, ApiConsumes, ApiResponse } from '@nestjs/swagger';
-import { ChatRoomService } from './message.service';
-import { ResponseService } from '@/utils/response';
-import { AddUserToRoomDto, CreateRoomDto } from './dto/create-message.dto';
+import { Controller, Get, Post, Delete, Patch, Body, Param, Request, UseInterceptors, UploadedFiles, HttpStatus } from '@nestjs/common';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
-import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
+import { ChatService } from './message.service';
+import { ResponseService } from '@/utils/response';
 import { CustomFileFieldsInterceptor } from '@/helper/file_interceptor';
+import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
 
+@Controller('messages')
+export class ChatController {
+  constructor(private readonly chatService: ChatService) {}
 
+@Get(':selectedUserId')
+@Roles(Role.ADMIN, Role.TRADER) 
+async getMessages(
+  @Request() req,
+  @Param('selectedUserId') selectedUserId: string
+) {
+  const currentUserId = req.user.id;
 
-@Controller('api/rooms')
-export class ChatRoomController {
-  constructor(private readonly chatRoomService: ChatRoomService) {}
+  console.log(currentUserId, selectedUserId, 'currentUserId and selectedUserId');
 
-  @Get(':roomId/messages')
-  @Roles(Role.ADMIN,Role.TRADER)
-  async getMessageHistory(
-    @Param('roomId') roomId: string,
-    @Query() query: Record<string, any>,
-    @Request() req,
-  ) {
+  const messages = await this.chatService.getMessagesBetweenUsers(
+    currentUserId,
+    selectedUserId
+  );
+
+  return ResponseService.formatResponse({
+    statusCode: HttpStatus.OK,
+    message: 'Messages retrieved successfully',
+    data: messages,
+  });
+}
+
+  @Post('files')
+  @UseInterceptors(
+    CustomFileFieldsInterceptor([{ name: 'files', maxCount: 10 }]),
+    ParseFormDataInterceptor,
+  )
+  @Roles(Role.ADMIN, Role.TRADER)
+  async uploadFile(@Request() req, @UploadedFiles() files: Record<string, Express.Multer.File[]>) {
     const userId = req.user.id;
-    const messages = await this.chatRoomService.getMessageHistory(roomId, userId, query);
-    return ResponseService.formatResponse({
-      statusCode: HttpStatus.OK,
-      message: 'Messages retrieved successfully',
-      data: messages,
-    });
-  }
-
-  @Post()
-  @Roles(Role.ADMIN,Role.TRADER)
-  async createRoom(
-    @Body() createRoomDto: CreateRoomDto,
-    @UploadedFile() file: Express.Multer.File,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    const room = await this.chatRoomService.createRoom(createRoomDto, file?.path, userId);
-    return ResponseService.formatResponse({
-      statusCode: HttpStatus.CREATED,
-      message: 'Room created successfully',
-      data: room,
-    });
-  }
-
-  @Post(':roomId/users')
-  @Roles(Role.ADMIN,Role.TRADER)
-  async addUserToRoom(
-    @Param('roomId') roomId: string,
-    @Body() addUserDto: AddUserToRoomDto,
-    @Request() req,
-  ) {
-    const addedBy = req.user.id;
-    const result = await this.chatRoomService.addUserToRoom(roomId, { ...addUserDto, addedBy });
-    return ResponseService.formatResponse({
-      statusCode: HttpStatus.CREATED,
-      message: 'User added to room successfully',
-      data: result,
-    });
-  }
-
-  @Delete(':roomId')
-  async deleteRoom(
-    @Param('roomId') roomId: string,
-    @Request() req,
-  ) {
-    const userId = req.user.id;
-    await this.chatRoomService.deleteRoom(roomId, userId);
-    return ResponseService.formatResponse({
-      statusCode: HttpStatus.OK,
-      message: 'Room deleted successfully',
-    });
-  }
-
-  @Post(':roomId/files')
-   @UseInterceptors(
-      CustomFileFieldsInterceptor([
-        { name: 'files', maxCount: 10 },
-        { name: "icon", maxCount: 1 },
-      ]), 
-      ParseFormDataInterceptor,  
-    )  
-    @Roles(Role.ADMIN)
-  async uploadFile(
-    @Param('roomId') roomId: string,
-    @Request() req,
-    @UploadedFiles() files: Record<string, Express.Multer.File[]>,
-  ) {
-
-  let fileUrls: string[] = [];
-  if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
-  }
-    const uploadedBy = req.user.id;
-    const result = await this.chatRoomService.uploadFile(roomId, uploadedBy, fileUrls);
+    const fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    const result = await this.chatService.uploadFile(userId, fileUrls ? fileUrls : []);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.CREATED,
       message: 'File uploaded successfully',
@@ -106,32 +49,26 @@ export class ChatRoomController {
     });
   }
 
-  @Get(':roomId')
-  @Roles(Role.ADMIN,Role.TRADER)
-  async getRoomDetails(
-    @Param('roomId') roomId: string,
-    @Request() req,
-  ) {
+  @Delete(':messageId')
+  @Roles(Role.ADMIN, Role.TRADER)
+  async deleteMessage(@Param('messageId') messageId: string, @Request() req) {
     const userId = req.user.id;
-    const room = await this.chatRoomService.getRoomDetails(roomId, userId);
+    await this.chatService.deleteMessage(messageId, userId);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
-      message: 'Room details retrieved successfully',
-      data: room,
+      message: 'Message deleted successfully',
     });
   }
 
-  @Get('user/:userId')
-  @Roles(Role.ADMIN,Role.TRADER)
-  async getUserRooms(
-    @Param('userId') userId: string,
-    @Request() req,
-  ) {
-    const rooms = await this.chatRoomService.getUserRooms(userId);
+  @Patch(':messageId')
+  @Roles(Role.ADMIN, Role.TRADER)
+  async updateMessage(@Param('messageId') messageId: string, @Body('text') text: string, @Request() req) {
+    const userId = req.user.id;
+    const updatedMessage = await this.chatService.updateMessage(messageId, userId, text);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
-      message: 'User rooms retrieved successfully',
-      data: rooms,
+      message: 'Message updated successfully',
+      data: updatedMessage,
     });
   }
 }

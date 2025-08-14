@@ -29,13 +29,13 @@ export class TaskManagementController {
 
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
   }
   
   const result = await this.taskManagementService.create({
     ...createTaskManagementDto,
-    attachments: fileUrls ? fileUrls : null,
-  });
+    files: fileUrls ? fileUrls : [],
+  }as any);
 
   return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
@@ -88,9 +88,9 @@ export class TaskManagementController {
   ) {
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
   }
-    const result = await this.taskManagementService.update(id, {...updateTaskManagementDto, attachments: fileUrls});
+    const result = await this.taskManagementService.update(id, {...updateTaskManagementDto, files: fileUrls ? fileUrls : []}as any);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Management Updated Successfully',

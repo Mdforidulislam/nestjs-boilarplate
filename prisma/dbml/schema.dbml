@@ -304,11 +304,11 @@ Table chats {
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   senderId String [not null]
-  roomId String [not null]
+  roomId String
   receiverId String [not null]
   sender users [not null]
   reciver users [not null]
-  room rooms [not null]
+  room rooms
   file uploaded_files
   messageRead message_reads [not null]
 }
@@ -332,13 +332,14 @@ Table uploaded_files {
   filename String
   path String
   size Int
+  urls String[] [not null]
   mimeType String
   fileType FileType [not null, default: 'FILE']
   uploadedBy String [not null]
-  roomId String [not null]
+  roomId String
   createdAt DateTime [default: `now()`, not null]
   uploader users [not null]
-  room rooms [not null]
+  room rooms
   chat chats [not null]
 }
 

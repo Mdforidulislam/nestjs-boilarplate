@@ -408,11 +408,11 @@ model Chat {
   updatedAt   DateTime @updatedAt
   
   senderId    String   @db.ObjectId
-  roomId      String   @db.ObjectId
-  receiverId  String    @db.ObjectId
-  sender      User           @relation("UserSentMessages", fields: [senderId], references: [id])
-  reciver     User           @relation("UserReciveMessage", fields: [receiverId], references: [id])
-  room        Room           @relation(fields: [roomId], references: [id])
+  roomId      String?   @db.ObjectId
+  receiverId  String   @db.ObjectId
+  sender      User          @relation("UserSentMessages", fields: [senderId], references: [id])
+  reciver     User          @relation("UserReciveMessage", fields: [receiverId], references: [id])
+  room        Room?           @relation(fields: [roomId], references: [id])
   file        UploadedFile?  @relation(fields: [fileId], references: [id])
   messageRead MessageRead[]
 
@@ -445,14 +445,15 @@ model UploadedFile {
   filename     String?
   path         String?
   size         Int?
+  urls          String[]
   mimeType     String?
   fileType     FileType    @default(FILE)
   uploadedBy   String   @db.ObjectId
-  roomId       String   @db.ObjectId
+  roomId       String?   @db.ObjectId
   createdAt    DateTime @default(now())
   
   uploader     User     @relation(fields: [uploadedBy], references: [id])
-  room         Room     @relation(fields: [roomId], references: [id])
+  room         Room?     @relation(fields: [roomId], references: [id])
   chat         Chat[]
 
 

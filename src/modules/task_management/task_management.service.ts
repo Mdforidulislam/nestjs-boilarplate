@@ -14,11 +14,9 @@ constructor(
   private readonly prismaHelper: PrismaHelperService
 ) {}
 async create(createTaskManagementDto: CreateTaskManagementDto) {
-  try{
+
      console.log(createTaskManagementDto,'createTaskManagementDto');
    
-
-
      return await this.prisma.$transaction(async (tx) => {
 
     const trader = await tx.trader.findFirst({
@@ -34,9 +32,9 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
       return "Trader not found";
     }
 
-    if (!trader.isVerified) {
-      return "Trader is not verified";
-    }
+    // if (!trader.isVerified) {
+    //   return "Trader is not verified";
+    // }
 
   
     const duplicateTask = await tx.task.findFirst({
@@ -61,9 +59,7 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
 
     return createdTask;
   });
-  }catch(e){
-    console.log(e);
-  }
+  
 }
 
 
@@ -73,7 +69,7 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
   
     const queryBuilder = new QueryBuilder(query, this.prisma.task);
     const result = await queryBuilder
-      .filter()
+      .filter(["title","taskType","location","max_salary","min_salary","require_skills","status","isActive","traderId"])
       .search([])
       .nestedFilter([])
       .sort()
@@ -87,6 +83,7 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
     const meta = await queryBuilder.countTotal();
     return { meta, data: result };
   }
+
 
 async findOne(id: string) {
   const task = await this.prisma.task.findUnique({ where: { id } });
