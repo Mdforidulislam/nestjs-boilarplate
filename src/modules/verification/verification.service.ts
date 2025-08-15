@@ -5,38 +5,42 @@ import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
 import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
 import { MarketplacePaymentService } from '@/payment/Stripe/marketplace.payment';
+import Stripe from 'stripe';
 
 @Injectable()
 export class VerificationService {
+  private stripe: Stripe;
   constructor(
     private readonly prisma: PrismaService,
     private readonly prismaHelper: PrismaHelperService,
-    private readonly marketplaceService: MarketplacePaymentService
-  ) {}
+    private readonly marketplaceService: MarketplacePaymentService,
+  ) {
+      this.stripe  =  StripeSingleton.getClient()
+  }
 
-  async create(createVerificationDto: CreateVerificationDto) {
-    const stripe = StripeSingleton.getClient();
-
+  async create(createVerificationDto: CreateVerificationDto, tokenUser: any) {
+  try {
+    // 1. Get user with trader relation
     const user = await this.prisma.user.findUnique({
-      where: {
-        email: createVerificationDto.email,
-      },
-      include: {
-        trader: true,
-      },
+      where: { email: tokenUser.email },
+      include: { trader: true },
     });
 
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      throw new Error('User not found');
+    }
+    if (!user.trader) {
+      throw new Error('Trader profile not found for this user');
+    }
 
-    // If no stripe account, create one
+    // 2. If no Stripe account yet, create one
     if (!user.trader.stripeAccountId) {
-
-      const account = await stripe.accounts.create({
+      const account = await this.stripe.accounts.create({
         type: 'express',
         email: user.email,
-        country: createVerificationDto.country,
-        tos_acceptance:{
-            service_agreement: ''
+        country: 'US',
+        tos_acceptance: {
+          service_agreement: 'full',
         },
         capabilities: {
           transfers: { requested: true },
@@ -45,42 +49,57 @@ export class VerificationService {
         business_type: 'individual',
       });
 
+      // Save Stripe account ID
       await this.prisma.trader.update({
-        where: { id: user.id },
+        where: { id: user.trader.id },
         data: { stripeAccountId: account.id },
       });
 
-
-      const accountLink = await stripe.accountLinks.create({
+      const accountLink = await this.stripe.accountLinks.create({
         account: account.id,
         refresh_url: `${process.env.CLIENT_URL}/stripe/refresh`,
         return_url: `${process.env.CLIENT_URL}/stripe/return`,
         type: 'account_onboarding',
       });
 
-      return { onboardingUrl: accountLink.url , accountLink};
+      return {
+        status: 'onboarding_required',
+        onboardingUrl: accountLink.url,
+        accountLink,
+      };
     }
 
-    // If account exists, check status
-    const account = await stripe.accounts.retrieve(user.trader.stripeAccountId);
-
-    console.log(account, 'account');
+    // 3. If Stripe account exists, check status
+    const account = await this.stripe.accounts.retrieve(user.trader.stripeAccountId);
 
     if (account.details_submitted && account.charges_enabled) {
       return { status: 'verified', canPayout: true };
-    } else {
-      const account = await stripe.accounts.retrieve("acct_1RtHCvKGhhHMR5Eo");
-      console.log(account, 'account');
-      const accountLink = await stripe.accountLinks.create({
-        account: user.trader.stripeAccountId,
-        refresh_url: `${process.env.CLIENT_URL}/stripe/refresh`,
-        return_url: `${process.env.CLIENT_URL}/stripe/return`,
-        type: 'account_onboarding',
-      });
-
-      return { onboardingUrl: accountLink.url , accountLink};
     }
+
+    // If not verified, send onboarding link again
+    const accountLink = await this.stripe.accountLinks.create({
+      account: user.trader.stripeAccountId,
+      refresh_url: `${process.env.CLIENT_URL}/stripe/refresh`,
+      return_url: `${process.env.CLIENT_URL}/stripe/return`,
+      type: 'account_onboarding',
+    });
+
+    return {
+      status: 'onboarding_required',
+      onboardingUrl: accountLink.url,
+      accountLink,
+    };
+  } catch (error) {
+    console.error('Stripe verification error:', error);
+
+    // Return structured error response
+    return {
+      status: 'error',
+      message: error.message || 'Something went wrong during verification',
+    };
   }
+}
+
 
   // Optional CRUDs
   findAll() {

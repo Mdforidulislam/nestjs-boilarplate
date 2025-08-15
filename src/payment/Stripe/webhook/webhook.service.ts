@@ -74,12 +74,12 @@ export class WebhookService {
         const subscriptionId = session?.subscription as string;
         const customerId = session?.customer as string;
         const expiuredAt = session?.expires_at as number;
+        console.log(session,'session');
             if (session?.payment_status === 'paid') {
-
                 if(metadata?.paymentType === "TRADER_SUBSCRIPTION_CREATED"){
                     await this.prisma.$transaction(async (tx) => {
                          // create subscription
-                    await tx.subscription.create({
+                const subscription =    await tx.subscription.create({
                       data: {
                           subscriptionPlanId: metadata.subscriptionPlanId,
                           expiresAt: new Date(expiuredAt * 1000),
@@ -92,8 +92,9 @@ export class WebhookService {
                     });
 
                     //  create payment for subscription
-                    await tx.payment.create({
+                 const payment =   await tx.payment.create({
                       data: {
+                        paymentOwnerId: metadata.ownerId,
                         paymentType: PaymentType.SUBSCRIPTION,
                         subscriptionPlanId: metadata.subscriptionPlanId,
                         currency: session.currency,
@@ -102,6 +103,9 @@ export class WebhookService {
                         paymentStatus: "SUCCEEDED",
                       }
                     })
+
+                    console.log(payment,'payment');
+                    console.log(subscription,'subscription');
                     })
                  }
             }

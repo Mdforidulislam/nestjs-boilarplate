@@ -234,6 +234,7 @@ Table payments {
   paymentType PaymentType [not null, default: 'TASK_PAYMENT']
   amount Float [not null]
   currency String [not null]
+  paymentOwnerId String
   paymentStatus PaymentStatus [not null]
   subscriptionId String
   traderId String

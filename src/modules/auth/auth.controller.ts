@@ -86,9 +86,10 @@ export class AuthController {
     });
   }
 
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @IsPublic()
   @Post('forgot-password')
   async forgotPasswod(@Body() data: { email: string }) {
+    console.log("excution project here/11");
     const result = await this.authService.forgetPassword({
       email: data?.email,
     });
@@ -99,7 +100,7 @@ export class AuthController {
     });
   }
 
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+
   @Post('reset-password')
   async resetPassword(
     @Headers('authorization') token: string,

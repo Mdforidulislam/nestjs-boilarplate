@@ -1,4 +1,5 @@
 import { BrevoService } from '@/email/brevo';
+import { sendEmail } from '@/email/resend';
 import { PrismaService } from '@/helper/prisma.service';
 import { BrevoEmailParams } from '@/interface/brevo';
 import { UserService } from '@/modules/user/user.service';
@@ -168,6 +169,8 @@ export class AuthService {
   async forgetPassword({ email }: { email: string }) {
     const user = await this.usersService.getOne({ email });
 
+
+
     if (!user) {
       throw new ApiError(HttpStatus.NOT_FOUND, `User Not Found`);
     }
@@ -177,17 +180,16 @@ export class AuthService {
       role: user.role,
     };
 
+    console.log(user.email,'checking the email sending here');
+
     const resetPassToken = this.jwtService.signAsync(payload);
 
-    const resetPasswordLink =
-      this.configService.get(`RESET_PASSWORD_LINK`) +
-      `?userId=${user.id}&token=${resetPassToken}`;
+    const resetPasswordLink =`${process.env.RESET_PASSWORD_LINK}/reset-password?userId=${user.id}&token=${resetPassToken}`;
 
-    const params: BrevoEmailParams = {
-      sender: { email: 'info@fourteencapital.com', name: 'Fourteen Capital' },
-      to: [{ email: user?.email, name: user?.username }],
+    const emailSending = {
+      to: [ user?.email],
       subject: 'FourteenCapital - Reset Your Password',
-      htmlContent: `<!DOCTYPE html>
+      template: `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
@@ -228,7 +230,7 @@ export class AuthService {
       // attachmentUrls: ['https://.../file.pdf'],
     };
 
-    await this.brevoService.sendEmail(params);
+    await sendEmail(emailSending);
 
     return {
       message: 'Reset password link sent via your email successfully',

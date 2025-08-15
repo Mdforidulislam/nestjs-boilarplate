@@ -313,6 +313,7 @@ model Payment {
   paymentType        PaymentType   @default(TASK_PAYMENT)
   amount             Float
   currency           String
+  paymentOwnerId     String?
   paymentStatus      PaymentStatus
   subscriptionId     String?       @db.ObjectId
   traderId           String?       @db.ObjectId

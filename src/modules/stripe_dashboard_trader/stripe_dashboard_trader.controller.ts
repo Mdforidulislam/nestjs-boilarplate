@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Req } from '@nestjs/common';
 import { StripeDashboardTraderService } from './stripe_dashboard_trader.service';
 import { CreateStripeDashboardTraderDto } from './dto/create-stripe_dashboard_trader.dto';
 import { UpdateStripeDashboardTraderDto } from './dto/update-stripe_dashboard_trader.dto';
@@ -33,8 +33,12 @@ async  findAll() {
 
 
   @Get(':id')
- async findOne(@Param('id') id: string) {
-    const response = await this.stripeDashboardTraderService.findOne(id);
+ async findOne(
+  @Param('id') id: string,
+  @Req() req: any
+) {
+    const user = req?.user;
+    const response = await this.stripeDashboardTraderService.findOne(user);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Stripe Dashboard Trader Found Successfully',

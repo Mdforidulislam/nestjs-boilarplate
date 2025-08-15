@@ -1,134 +1,124 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { SuscriptionStripe } from '@/payment/Stripe/subcription.stripe';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
-import QueryBuilderIsrafil from '@/utils/queryBuilder';
-import { SubscriptionFilterFields, SubscriptionInclude, SubscriptionRangeFilter } from './subscription.constant';
-import { sub } from 'date-fns';
-import e from 'express';
-import { Subscription } from '@prisma/client';
 import QueryBuilder from '@/utils/queryBuilder';
+import { Subscription } from '@prisma/client';
 
 @Injectable()
-
-
 export class SubscriptionService {
-
-  constructor (
+  constructor(
     private readonly suscriptionStripe: SuscriptionStripe,
     private readonly prisma: PrismaService,
     private readonly prismaHelper: PrismaHelperService
   ) {}
 
-  async  create(createSubscriptionDto: CreateSubscriptionDto) {
-
-    return await this.prisma.$transaction(async (tx) => {
-      try{
-        const  findUser = await tx.user.findFirst({
-          where: {id: createSubscriptionDto.userId}
+  async create(createSubscriptionDto: CreateSubscriptionDto, user: any) {
+    return this.prisma.$transaction(async (tx) => {
+      try {
+        const isExiteUser = await tx.user.findUnique({
+          where: { id: user.id },
+          include: { trader: true }
         });
-        console.log(findUser,'checking user');
 
+        if (!isExiteUser) throw new NotFoundException('User not found');
+        if (!isExiteUser.isVerified) throw new ForbiddenException('User is not verified');
+        if (!isExiteUser.trader) throw new NotFoundException('Trader profile not found');
 
-      if(!findUser) {
-        throw new Error("user not found")
-      }
+        // 2️⃣ Validate Subscription Plan
+        const plan = await tx.subscriptionPlan.findFirst({
+          where: { stripePriceId: createSubscriptionDto.subscriptionPlanId } as any
+        });
+        if (!plan) throw new NotFoundException('Subscription plan not found');
 
-      if(!findUser?.isVerified){
-        throw new Error("user is not verified")
-      }
+        // 3️⃣ Check existing subscriptions
+        const alreadySubscribed = await tx.subscription.findFirst({
+          where: { ownerId: isExiteUser.trader.id }
+        });
 
-      const findingSubscripitonPlan = await tx.subscriptionPlan.findFirst({
-        where: {
-          stripePriceId: createSubscriptionDto?.subscriptionPlanId
-        } as any
-      });
+        if (alreadySubscribed) throw new BadRequestException('User already subscribed to a plan');
 
-      if(!findingSubscripitonPlan) {
-        throw new Error("subscription plan not found")
-      }
+        // 4️⃣ Create Stripe Subscription Session
+        const subscriptionSession = await this.suscriptionStripe.createSubscription({
+          subscriptionType: 'sesstion',
+          email: isExiteUser.email,
+          priceId: plan.stripePriceId,
+          description: plan.description ?? 'Subscription Plan',
+          metadata: {
+            subscriptionPlanId: plan.id,
+            ownerId: isExiteUser.trader.id,
+            paymentType: 'TRADER_SUBSCRIPTION_CREATED'
+          }
+        });
 
-      const subscriptionSesstion = await this.suscriptionStripe.createSubscription({
-        subscriptionType: "sesstion",
-        email: findUser.email,
-        priceId: findingSubscripitonPlan.stripePriceId,
-        description: findingSubscripitonPlan.description ?? "This is Subscription Plan",
-        metadata: {
-          subscriptionPlanId: findingSubscripitonPlan.id,
-          ownerId: findUser.id,
-          paymentType : "TRADER_SUBSCRIPTION_CREATED"
-
-        }
-      });
-
-      return subscriptionSesstion
-
-      }catch (error: unknown) {
-        console.log(error);
+        return { success: true, session: subscriptionSession };
+      } catch (error) {
+        console.error('Create subscription failed:', error);
+        throw new InternalServerErrorException(
+          error instanceof Error ? error.message : 'Failed to create subscription'
+        );
       }
     });
-}
-
- async findAll(query: Record<string, any>) {
-    const queryBuilder = new QueryBuilder(query, this.prisma.subscription);
-    const result = await queryBuilder
-
-      .filter()
-      .search([])
-      .nestedFilter([])
-      .sort()
-      .paginate()
-      .include({})
-      .fields()
-      .filterByRange([])
-      .execute();
-
-    const meta = await queryBuilder.countTotal();
-
-    return { meta, data: result };
-
   }
 
-async  findOne(id: string) {
-    this.prismaHelper.validateEntityExistence("subscription",id,
-      "Subscription not found"
-    )
+  async findAll(query: Record<string, any>, user: any) {
+    try {
+      const isAdmin = user.role === 'ADMIN';
+      const trader = await this.prisma.trader.findUnique({ where: { userId: user.id } });
 
-    const response = await this.prisma.subscription.findUnique({where: {id}});
-    return response
-}
+      const queryBuilder = new QueryBuilder(query, this.prisma.subscription);
 
- async update(id: string, updateSubscriptionDto: any) {
+      const result = await queryBuilder
+        .filter()
+        .search([])
+        .nestedFilter([])
+        .sort()
+        .rawFilter(isAdmin ? {} : { ownerId: trader?.id })
+        .paginate()
+        .include({})
+        .fields()
+        .filterByRange([])
+        .execute();
 
-   try{
-        const subscription : Subscription | null = await this.prismaHelper.validateEntityExistence("subscription",id,
-          "Subscription not found"
-        )
+      const meta = await queryBuilder.countTotal();
+      return { success: true, meta, data: result };
+    } catch (error) {
+      console.error('Find all subscriptions failed:', error);
+      throw new InternalServerErrorException('Failed to retrieve subscriptions');
+    }
+  }
 
-      if(!subscription) {
-        throw new Error("Subscription not found")
-      }
+  async findOne(id: string) {
+    await this.prismaHelper.validateEntityExistence('subscription', id, 'Subscription not found');
+    return this.prisma.subscription.findUnique({ where: { id } });
+  }
 
-    const updateSubscription = await this.suscriptionStripe.updateSubscription({
-      subscriptionId: subscription?.stripeSubscriptionId
-    });
+  async update(id: string, updateSubscriptionDto: any) {
+    try {
+      const subscription: Subscription = await this.prismaHelper.validateEntityExistence(
+        'subscription',
+        id,
+        'Subscription not found'
+      );
 
-    return updateSubscription
+      return this.suscriptionStripe.updateSubscription({
+        subscriptionId: subscription.stripeSubscriptionId
+      });
+    } catch (error) {
+      console.error('Update subscription failed:', error);
+      throw new InternalServerErrorException('Failed to update subscription');
+    }
+  }
 
-   }catch (error: unknown) {
-     console.log(error);
-   }
-}
+  async remove(id: string) {
+    await this.prismaHelper.validateEntityExistence('subscription', id, 'Subscription not found');
 
- async remove(id: string) {
-
-    this.prismaHelper.validateEntityExistence("subscription",id,
-      "Subscription not found"
-    )
-
-    const repsonse = await this.suscriptionStripe.cancelSubscription({subscriptionId: id});
-    return repsonse
-}
+    try {
+      return this.suscriptionStripe.cancelSubscription({ subscriptionId: id });
+    } catch (error) {
+      console.error('Cancel subscription failed:', error);
+      throw new InternalServerErrorException('Failed to cancel subscription');
+    }
+  }
 }

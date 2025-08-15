@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, Req } from '@nestjs/common';
 import { VerificationService } from './verification.service';
 import { CreateVerificationDto } from './dto/create-verification.dto';
 import { UpdateVerificationDto } from './dto/update-verification.dto';
@@ -12,8 +12,13 @@ export class VerificationController {
 
 @Roles(Role.ADMIN, Role.TRADER)
 @Post()
- async create(@Body() createVerificationDto: CreateVerificationDto) {
-    const result = await  this.verificationService.create(createVerificationDto);
+ async create(
+  @Body() createVerificationDto: CreateVerificationDto,
+  @Req() req: any
+) {
+  
+  const user = req?.user;
+  const result = await  this.verificationService.create(createVerificationDto, user);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Verification created successfully',

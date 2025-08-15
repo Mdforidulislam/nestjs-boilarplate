@@ -5,6 +5,7 @@ import { StripeService } from '@/payment/Stripe/intent.payment';
 import { PrismaService } from '@/helper/prisma.service';
 import { PrismaHelperService } from '@/utils/is_existance';
 import { MarketplacePaymentService } from '@/payment/Stripe/marketplace.payment';
+import { StripeSingleton } from '@/payment/Stripe/stripe.connection';
 
 @Module({
   controllers: [VerificationController],
