@@ -39,8 +39,6 @@ model User {
 }
 
 
-
-
 enum VerificationStatus {
   PENDING
   VERIFIED

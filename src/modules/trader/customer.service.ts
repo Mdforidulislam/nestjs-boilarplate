@@ -1,47 +1,76 @@
 import { PrismaService } from '@/helper/prisma.service';
 import { IGenericResponse } from '@/interface/common';
 import { ApiError } from '@/utils/api_error';
-import QueryBuilder from '@/utils/query_builder';
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { Trader, Role } from '@prisma/client';
+import { Trader, Role, SubscriptionStatus } from '@prisma/client';
 import { UpdateCustomerDto } from './dto/update-customer.dto';
+import QueryBuilder from '@/utils/queryBuilder';
 // import { UpdateCustomerDto } from './dto/update-Customer.dto';
 
 @Injectable()
 export class CustomerService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(
-    query: Record<string, any>,
-  ): Promise<IGenericResponse<Trader[]>> {
-    const populateFields = query.populate
-      ? query.populate
-          .split(',')
-          .reduce((acc: Record<string, boolean>, field) => {
-            acc[field] = true;
-            return acc;
-          }, {})
-      : {};
+async findAll(
+  query: Record<string, any>,
+): Promise<IGenericResponse<Trader[]>> {
+  const populateFields = query.populate
+    ? query.populate
+        .split(',')
+        .reduce((acc: Record<string, boolean>, field) => {
+          acc[field] = true;
+          return acc;
+        }, {})
+    : {};
 
-    const queryBuilder = new QueryBuilder(this.prisma.user, query);
-    const result = await queryBuilder
-      .range()
-      .search([])
-      .filter([], [])
-      .sort()
-      .paginate()
-      .fields()
-      .include({
-        customer: true,
-      })
-      .rawFilter({ role: Role.TRADER })
-      .populate(populateFields)
-      .execute();
+  // Use Trader model directly
+  const queryBuilder = new QueryBuilder(query, this.prisma.trader);
 
+  const result = await queryBuilder
+   .filter([])
+    .search(["nationality","fastName", "lastName"])
+    .nestedFilter([])
+    .sort()
+    .paginate() 
+    .include({
+      user: true,
+    })
+    .fields()
+    .filterByRange([
+      {
+        field: "mininumHoulyRate",
+        dataType: "number",
+        maxQueryKey: query.mininumHoulyRate,
+        minQueryKey: query.mininumHoulyRate,
+      }
+    ])
+    .execute();
     const meta = await queryBuilder.countTotal();
 
-    return { meta, data: result };
-  }
+  // const sortedResult = result.sort((a, b) => {
+    const getRank = (trader: any) => {
+      const sub = trader.subscription?.[0];
+      if (
+        sub &&
+        sub.subscriptionStatus === SubscriptionStatus.ACTIVE
+      ) {
+        const plan = sub.subscriptionPlan?.plan;
+        if (plan === 'ELITE_PLAN') return 1;
+        if (plan === 'PRO_PLAN') return 2;
+      }
+      return 3;
+    };
+
+   const sortedResult = result.sort((a : any, b : any) => {
+      const rankA = getRank(a);
+      const rankB = getRank(b);
+      return rankA - rankB;
+    });
+
+  return { meta, data: sortedResult };
+
+}
+
 
   async findOne(id: string) {
     let isCustomerExists = await this.prisma.trader

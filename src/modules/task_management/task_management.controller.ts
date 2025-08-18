@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UseInterceptors, UploadedFiles, Query, Req } from '@nestjs/common';
 import { TaskManagementService } from './task_management.service';
 import {  CreateTaskManagementDto } from './dto/create-task_management.dto';
 import { UpdateTaskManagementDto } from './dto/update-task_management.dto';
@@ -29,12 +29,12 @@ export class TaskManagementController {
 
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
   }
   
   const result = await this.taskManagementService.create({
     ...createTaskManagementDto,
-    files: fileUrls ? fileUrls : [],
+    files: fileUrls ? fileUrls : []
   }as any);
 
   return ResponseService.formatResponse({
@@ -47,9 +47,9 @@ export class TaskManagementController {
 
 @IsPublic()
 @Get()
-
  async findAll(
   @Query() query: Record<string, any>,
+  @Req() req: any
  ) {
     const result = await this.taskManagementService.findAll(query);
     return ResponseService.formatResponse({
@@ -58,6 +58,21 @@ export class TaskManagementController {
       data: result
     });
   }
+
+@Roles(Role.ADMIN, Role.TRADER)
+@Get("privet-all")
+ async getPrivetTaskAll(
+  @Query() query: Record<string, any>,
+  @Req() req: any
+ ) {
+    const user = req?.user;
+    const result = await this.taskManagementService.getTaskWithPrivetAll(query,user);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Management Deleted Successfully',
+      data: result
+    });
+}
 
 @IsPublic()
 //  @Roles(Role.ADMIN, Role.TRADER)
@@ -88,7 +103,7 @@ export class TaskManagementController {
   ) {
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
   }
     const result = await this.taskManagementService.update(id, {...updateTaskManagementDto, files: fileUrls ? fileUrls : []}as any);
     return ResponseService.formatResponse({

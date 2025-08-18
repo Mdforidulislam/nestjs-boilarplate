@@ -80,13 +80,34 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
       throw new BadRequestException('Trader has no active subscription');
     }
 
-    const planFeatures = subscription.subscriptionPlan?.featuresList.map((f) =>
-      f.toLowerCase(),
-    );
+    // const planFeatures = subscription.subscriptionPlan?.featuresList.map((f) =>
+    //   f.toLowerCase(),
+    // );
 
-    // 6. Limited / Unlimited tasks check
-    if (planFeatures.includes('limited_task')) {
-      // Count active/in-progress tasks
+    // // 6. Limited / Unlimited tasks check
+    // if (planFeatures.includes('limited_task')) {
+    //   // Count active/in-progress tasks
+    //   const activeTasksCount = await tx.task.count({
+    //     where: {
+    //       traderId: trader.id,
+    //       status: {
+    //         in: ['IN_PROGRESS', 'ORDER_ACTIVE'], // adjust if needed
+    //       },
+    //     },
+    //   });
+
+    //   if (
+    //     activeTasksCount >=
+    //     (subscription.subscriptionPlan.featuresList['limited_task'] ?? 0)
+    //   ) {
+    //     throw new BadRequestException(
+    //       `You have reached your task creation limit of ${subscription.subscriptionPlan["limited_task"]}`,
+    //     );
+    //   }
+    // }
+    // If 'unlimited_task' or not present, no limit enforced
+
+    if(subscription.subscriptionPlan.plan === "PRO_PLAN"){
       const activeTasksCount = await tx.task.count({
         where: {
           traderId: trader.id,
@@ -95,17 +116,17 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
           },
         },
       });
-
+  
       if (
-        activeTasksCount >=
-        (subscription.subscriptionPlan.featuresList['limited_task'] ?? 0)
+        activeTasksCount > 3
       ) {
         throw new BadRequestException(
           `You have reached your task creation limit of ${subscription.subscriptionPlan["limited_task"]}`,
         );
       }
     }
-    // If 'unlimited_task' or not present, no limit enforced
+
+    console.log(trader.id, 'trader id in task management service');
 
     // 7. Create task
     const createdTask = await tx.task.create({
@@ -128,21 +149,78 @@ async create(createTaskManagementDto: CreateTaskManagementDto) {
   
     const queryBuilder = new QueryBuilder(query, this.prisma.task);
     const result = await queryBuilder
-      .filter(["title","taskType","location","max_salary","min_salary","require_skills","status","isActive","traderId"])
-      .search([])
-      .nestedFilter([])
-      .sort()
-      .paginate()
-      .include({
-        trader: true,
-      })
-      .fields()
-      .filterByRange([])
-      .execute();
+    .filter(["title","taskType","location","traderId","categoryid","subCategoryid"])
+    .search(["isActive","require_skills", "status"])
+    .nestedFilter([])
+    .sort()
+    .paginate() 
+    .include({
+      trader: true,
+    })
+    .fields()
+    .filterByRange([
+      {
+        field: "max_salary",
+        dataType: "number",
+        maxQueryKey: query.min_salary,
+        minQueryKey: query.max_salary,
+      },
+      {
+        field: "min_salary",
+        dataType: "number",
+        maxQueryKey: query.min_salary,
+        minQueryKey: query.max_salary,
+      }
+    ])
+    .execute();
     const meta = await queryBuilder.countTotal();
+
+
     return { meta, data: result };
   }
 
+
+async getTaskWithPrivetAll (
+  query: Record<string, any>,
+  user: any
+) {
+
+  const traderExiste = await this.prisma.trader.findFirst({where: {userId: user.id}});
+
+  const queryBuilder = new QueryBuilder(query, this.prisma.task);
+  const result = await queryBuilder
+    .filter(["title","taskType","location","traderId","categoryid","subCategoryid"])
+    .search(["isActive","require_skills", "status"])
+    .nestedFilter([])
+    .sort()
+    .rawFilter({
+      ...(user.role === "TRADER" && { traderId: traderExiste?.id }),
+      ...(user.role === "ADMIN" && {}),
+    })
+    .paginate()
+    .include({
+      trader: true,
+    })
+    .fields()
+    .filterByRange([
+      {
+        field: "max_salary",
+        dataType: "number",
+        maxQueryKey: query.min_salary,
+        minQueryKey: query.max_salary,
+      },
+      {
+        field: "min_salary",
+        dataType: "number",
+        maxQueryKey: query.min_salary,
+        minQueryKey: query.max_salary,
+      }
+    ])
+    .execute();
+  const meta = await queryBuilder.countTotal();
+
+  return { meta, data: result };
+}
 
 async findOne(id: string) {
   const task = await this.prisma.task.findUnique({ where: { id } });
@@ -153,7 +231,14 @@ async findOne(id: string) {
 }
 
  async update(id: string, updateTaskManagementDto: UpdateTaskManagementDto) {
-  this.prismaHelper.validateEntityExistence("task",id,"Task not found")
+
+ const isFindingTask = await this.prisma.task.findUnique({
+  where: { id },
+});
+
+if (!isFindingTask) {
+  throw new BadRequestException('Task not found');
+}
   
   
   return await this.prisma.task.update({where: {id}, data: updateTaskManagementDto});

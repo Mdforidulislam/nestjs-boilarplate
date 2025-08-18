@@ -32,7 +32,6 @@ export class SubscriptionController {
   @Query() query: Record<string, any>,
   @Req() req: any
  ) {
-
     const user = req?.user;
     console.log(user, 'user');
     const response = await  this.subscriptionService.findAll(query, user);
@@ -41,6 +40,21 @@ export class SubscriptionController {
       message: 'Subscriptions Found Successfully',
       data: response
     });
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('/admin')
+  async findAllByAdmin(
+    @Query() query: Record<string, any>,
+    @Req() req: any
+  ){
+      const user = req?.user;
+      const response = await  this.subscriptionService.findAllByAdmin(query, user);
+      return ResponseService.formatResponse({
+        statusCode: 200,
+        message: 'Subscriptions Found Successfully',
+        data: response
+      });
   }
 
   @Get(':id')

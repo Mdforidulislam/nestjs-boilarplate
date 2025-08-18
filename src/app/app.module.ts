@@ -83,7 +83,7 @@ import { BootsMangementModule } from '@/modules/boots_mangement/boots_mangement.
     TaskApplicationModule,
     FavoriteSaveModule,
     StripeDashboardTraderModule,
-    BootsMangementModule
+    BootsMangementModule,
   ],
   controllers: [AppController],
   providers: [

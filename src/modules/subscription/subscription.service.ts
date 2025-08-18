@@ -17,14 +17,15 @@ export class SubscriptionService {
   async create(createSubscriptionDto: CreateSubscriptionDto, user: any) {
     return this.prisma.$transaction(async (tx) => {
       try {
+
         const isExiteUser = await tx.user.findUnique({
           where: { id: user.id },
           include: { trader: true }
         });
 
         if (!isExiteUser) throw new NotFoundException('User not found');
-        if (!isExiteUser.isVerified) throw new ForbiddenException('User is not verified');
-        if (!isExiteUser.trader) throw new NotFoundException('Trader profile not found');
+        if (!isExiteUser?.trader.isVerified) throw new ForbiddenException('User is not verified');
+        if (!isExiteUser?.trader) throw new NotFoundException('Trader profile not found');
 
         // 2️⃣ Validate Subscription Plan
         const plan = await tx.subscriptionPlan.findFirst({
@@ -88,6 +89,24 @@ export class SubscriptionService {
       throw new InternalServerErrorException('Failed to retrieve subscriptions');
     }
   }
+
+  
+async findAllByAdmin(query: Record<string, any>, user: any ){
+
+  const queryBuilder = new QueryBuilder(query, this.prisma.subscription);
+  const result = await queryBuilder
+    .filter(["ownerId"])
+    .search(["ownerId"])
+    .nestedFilter([])
+    .sort()
+    .paginate()
+    .include({})
+    .fields()
+    .filterByRange([])
+    .execute();
+  const meta = await queryBuilder.countTotal();
+  return { success: true, meta, data: result };
+}
 
   async findOne(id: string) {
     await this.prismaHelper.validateEntityExistence('subscription', id, 'Subscription not found');

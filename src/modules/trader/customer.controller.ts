@@ -19,6 +19,7 @@ import { CustomFileFieldsInterceptor } from '@/helper/file_interceptor';
 import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
 import { FileService } from '@/helper/file.service';
 import { Role } from '@prisma/client';
+import { IsPublic } from '../auth/auth.decorator';
 
 @Controller('customers')
 export class CustomerController {
@@ -27,6 +28,7 @@ export class CustomerController {
     private readonly fileService: FileService,
   ) {}
 
+  @IsPublic()
   @Get()
   async findAll(@Query() query: Record<string, any>) {
     const result = await this.CustomerService.findAll(query);
@@ -39,7 +41,6 @@ export class CustomerController {
   }
 
   @Get(':id')
-
   async findOne(@Param('id') id: string) {
     const result = await this.CustomerService.findOne(id);
     return ResponseService.formatResponse({

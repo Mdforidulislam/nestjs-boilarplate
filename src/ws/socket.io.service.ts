@@ -43,7 +43,7 @@ export class WebsocketGateway
 
   async handleConnection(socket: Socket) {
     try {
-      const token = socket.handshake.headers['authorization'];
+      const token =  socket.handshake.auth.token;
       if (!token) throw new Error('No token provided');
 
       const payload = await this.jwtService.verifyAsync(token.toString());
@@ -89,6 +89,11 @@ export class WebsocketGateway
       select: { id: true, username: true, avatar: true, role: true, email: true, contactNo: true },
     });
 
+    const senderExists = await this.prisma.user.findUnique({
+      where: { id: senderId },
+      select: { id: true, username: true, avatar: true, role: true, email: true, contactNo: true },
+    });
+
     if (!receiverExists) {
       socket.emit('error', { message: 'Receiver not found' });
       return;
@@ -103,7 +108,7 @@ export class WebsocketGateway
     const receiverOnline = this.onlineUsers.get(receiverId);
     if (receiverOnline) {
       this.server.to(receiverOnline.socketId).emit('message', {
-        user: receiverExists,
+        user: senderExists,
         message,
         images,
       });

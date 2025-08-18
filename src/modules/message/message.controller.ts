@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Patch, Body, Param, Request, UseInterceptors, UploadedFiles, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Body, Param, Request, UseInterceptors, UploadedFiles, HttpStatus, Query } from '@nestjs/common';
 import { Roles } from '../auth/roles.decorator';
 import { Role } from '@prisma/client';
 import { ChatService } from './message.service';
@@ -9,6 +9,23 @@ import { ParseFormDataInterceptor } from '@/helper/form_data_interceptor';
 @Controller('messages')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
+
+
+@Get("user-list")
+@Roles(Role.ADMIN, Role.TRADER) 
+async getAllMessageUsers(
+  @Query() query: Record<string, any>,
+  @Request() req
+) {
+  const user = req?.user
+  const messages = await this.chatService.getAllMessageUsers(user, query);
+  return ResponseService.formatResponse({
+    statusCode: HttpStatus.OK,
+    message: 'Messages retrieved successfully',
+    data: messages,
+  });
+}
+
 
 @Get(':selectedUserId')
 @Roles(Role.ADMIN, Role.TRADER) 
@@ -40,7 +57,7 @@ async getMessages(
   @Roles(Role.ADMIN, Role.TRADER)
   async uploadFile(@Request() req, @UploadedFiles() files: Record<string, Express.Multer.File[]>) {
     const userId = req.user.id;
-    const fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    const fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
     const result = await this.chatService.uploadFile(userId, fileUrls ? fileUrls : []);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.CREATED,

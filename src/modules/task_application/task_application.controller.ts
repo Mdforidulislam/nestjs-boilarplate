@@ -20,8 +20,13 @@ export class TaskApplicationController {
 
   @Post()
   @Roles(Role.ADMIN, Role.TRADER)
-  async create(@Body() createTaskApplicationDto: CreateTaskApplicationDto) {
-    const reponse = await  this.taskApplicationService.create(createTaskApplicationDto);
+  async create(
+    @Body() createTaskApplicationDto: CreateTaskApplicationDto,
+    @Req() req: any
+  ) {
+
+    const user = req?.user;
+    const reponse = await  this.taskApplicationService.create(createTaskApplicationDto, user);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Application Created Successfully',
@@ -65,11 +70,45 @@ export class TaskApplicationController {
   })
 }
 
+@Get("history")
+@Roles(Role.TRADER, Role.ADMIN)
+async  HistoryTaskFindAllByTrader(
+    @Query() query: Record<string, any>,
+    @Req() req: any, 
+  ) {
+      const user = req?.user;
+      const result = await this.taskApplicationService.HistoryAllByTrader(query, user);
+      return ResponseService.formatResponse({
+        statusCode: HttpStatus.OK,
+        message: 'Task Application Found Successfully',
+        data: result
+      })
+  }
+
+
+@Get("delivery")
+@Roles(Role.TRADER, Role.ADMIN)
+async findingDeliveryTaskAll(
+  @Query() query: Record<string, any>,
+  @Req() req: any
+){
+  const user = req?.user;
+  const result = await this.taskApplicationService.findingDeliveryTaskAll(query, user);
+  return ResponseService.formatResponse({
+    statusCode: HttpStatus.OK,
+    message: 'Task Application Found Successfully',
+    data: result
+  })
+}
 
   @Get('offer/:id')
   @Roles(Role.TRADER, Role.ADMIN)
- async findOneOffer(@Param('id') id: string) {
-    const result = await this.taskApplicationService.findOneOffer(id);
+ async findOneOffer(
+  @Param('id') id: string,
+  @Req() req: any
+) {
+    const user = req?.user;
+    const result = await this.taskApplicationService.findOneOffer(id,user);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Application Found Successfully',
@@ -122,12 +161,24 @@ export class TaskApplicationController {
 
    let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files.files.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files.files.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
   }
 
   updateTaskApplicationDto.provide_attachments = fileUrls
 
     const result = await  this.taskApplicationService.updateRequest(id, updateTaskApplicationDto);
+    return ResponseService.formatResponse({
+      statusCode: HttpStatus.OK,
+      message: 'Task Application Updated Successfully',
+      data: result
+    })
+  }
+
+  @Patch("approve-delivery/:id")
+  @Roles(Role.TRADER, Role.ADMIN)
+  async approveDelivery(@Param('id') id: string) {
+
+    const result = await  this.taskApplicationService.approveDelivery(id);
     return ResponseService.formatResponse({
       statusCode: HttpStatus.OK,
       message: 'Task Application Updated Successfully',

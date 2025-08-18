@@ -33,13 +33,13 @@ export class TaskCategoryController {
    
     let fileUrls: string[] = [];
     if (files?.files) {
-      fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+      fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
     }
 
     let icon: string | null = null;
 
     if (files?.icon && files.icon[0]) {
-          icon = `https://localhost:6565/tmp/${files.icon[0]?.filename}`; 
+          icon = `${process.env.SERVER_END_POINT}/files/${files.icon[0]?.filename}`; 
     }
 
     const result = await this.taskCategoryService.create({
@@ -73,13 +73,13 @@ export class TaskCategoryController {
      
       let uploadedFiles: string[] = [];
       if (files?.files) {
-        uploadedFiles = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+        uploadedFiles = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
       }
 
       let icon: string | null = null;
 
       if (files?.icon && files.icon[0]) {
-            icon = `https://localhost:6565/tmp/${files.icon[0]?.filename}`; 
+            icon = `${process.env.SERVER_END_POINT}/files/${files.icon[0]?.filename}`; 
       }
 
       const data = {
@@ -167,14 +167,14 @@ async findAllSubCategory(
   
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
     updateTaskCategoryDto.files = fileUrls
   }
 
 
   const icon = updateTaskCategoryDto.icon
   if (icon) {
-    updateTaskCategoryDto.icon = `https://localhost:6565/tmp/${files.files[0]?.filename}`; 
+    updateTaskCategoryDto.icon = `${process.env.SERVER_END_POINT}/files/${files.files[0]?.filename}`; 
   }
   
   const result = await this.taskCategoryService.update(id, updateTaskCategoryDto);
@@ -203,13 +203,13 @@ async findAllSubCategory(
   
   let fileUrls: string[] = [];
   if (files) {
-    fileUrls = files?.files?.map((file) => `https://localhost:6565/tmp/${file.filename}`);
+    fileUrls = files?.files?.map((file) => `${process.env.SERVER_END_POINT}/files/${file.filename}`);
     updateTaskCategoryDto.files = fileUrls
   }
 
   const icon = updateTaskCategoryDto.icon
   if (icon) {
-    updateTaskCategoryDto.icon = `https://localhost:6565/tmp/${files.files[0]?.filename}`; 
+    updateTaskCategoryDto.icon = `${process.env.SERVER_END_POINT}/files/${files.files[0]?.filename}`; 
   }
   
     const result = await this.taskCategoryService.updateSubCategory(id, updateTaskCategoryDto);
